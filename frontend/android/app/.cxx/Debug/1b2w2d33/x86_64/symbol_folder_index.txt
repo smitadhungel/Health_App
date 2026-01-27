@@ -1,0 +1,1 @@
+/Users/roshan/Desktop/Health-App/frontend/android/app/build/intermediates/cxx/Debug/1b2w2d33/obj/x86_64
