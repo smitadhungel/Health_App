@@ -1,1 +1,54 @@
 .DS_Store
+node_modules
+# Android build artifacts
+**/android/app/build/
+**/android/.gradle/
+**/*.apk
+**/*.so
+**/*.jks
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.python-version
+
+# --- Virtual Environments ---
+.venv/
+venv/
+env/
+bin/
+lib/
+develop-eggs/
+dist/
+downloads/
+eggs/
+include/
+parts/
+sdist/
+var/
+
+# --- Django Specific ---
+db.sqlite3
+db.sqlite3-journal
+staticfiles/
+media/
+/static/
+
+# --- Environment Secrets (CRITICAL) ---
+.env
+.flaskenv
+*.env
+auth_key.json
+
+# --- IDEs and Editors ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store (Mac)
+
+# --- Logs ---
+*.log
+pip-log.txt
+pip-delete-this-directory.txt

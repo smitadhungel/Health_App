@@ -1,1 +1,7 @@
 node_modules
+# Android build artifacts
+**/android/app/build/
+**/android/.gradle/
+**/*.apk
+**/*.so
+**/*.jks
