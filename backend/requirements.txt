@@ -1,0 +1,16 @@
+# Core Web Framework
+Django>=4.2,<5.1
+
+# Django REST Framework
+djangorestframework>=3.14.0
+
+# Authentication (JWT)
+djangorestframework-simplejwt>=5.3.0
+PyJWT>=2.8.0
+
+# API Documentation (Swagger/OpenAPI)
+drf-yasg>=1.21.0
+packaging>=23.0
+
+# Cross-Origin Resource Sharing (CORS)
+django-cors-headers>=4.3.0
