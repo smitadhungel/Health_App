@@ -1,7 +1,4 @@
-// ============================================
-// src/services/api.ts
-// API Service for Django Backend Communication
-// ============================================
+
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
