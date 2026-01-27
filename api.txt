@@ -1,0 +1,90 @@
+BASE URL: http://localhost:8000/api/
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                        USER MANAGEMENT ENDPOINTS                     │
+├─────────────────────────────────────────────────────────────────────┤
+│ POST   /api/users/register/              - Register new user        │
+│ POST   /api/users/login/                 - Login                    │
+│ POST   /api/users/logout/                - Logout                   │
+│ GET    /api/users/profile/               - Get user profile         │
+│ PUT    /api/users/profile/update/        - Update profile           │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                        DOCTOR ENDPOINTS                              │
+├─────────────────────────────────────────────────────────────────────┤
+│ POST   /api/doctors/profile/create/              - Create profile   │
+│ GET    /api/doctors/profile/me/                  - My profile       │
+│ PUT    /api/doctors/profile/update/              - Update profile   │
+│ PUT    /api/doctors/profile/toggle-availability/ - Toggle status    │
+│ GET    /api/doctors/                             - List doctors     │
+│ GET    /api/doctors/{id}/                        - Doctor details   │
+│ POST   /api/doctors/availability/add/            - Add schedule     │
+│ GET    /api/doctors/{id}/availability/           - Get schedule     │
+│ POST   /api/doctors/{id}/review/                 - Add review       │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                        APPOINTMENT ENDPOINTS                         │
+├─────────────────────────────────────────────────────────────────────┤
+│ POST   /api/appointments/book/                   - Book appointment │
+│ GET    /api/appointments/my-appointments/        - My appointments  │
+│ GET    /api/appointments/{id}/                   - View details     │
+│ PUT    /api/appointments/{id}/update/            - Update           │
+│ POST   /api/appointments/{id}/cancel/            - Cancel           │
+│ POST   /api/appointments/{id}/reschedule/        - Reschedule       │
+│ GET    /api/appointments/doctor/appointments/    - Doctor's list    │
+│ PUT    /api/appointments/doctor/{id}/update/     - Doctor update    │
+│ POST   /api/appointments/doctor/{id}/complete/   - Mark completed   │
+│ GET    /api/appointments/available-slots/{id}/?date=YYYY-MM-DD      │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                        DOCUMENT ENDPOINTS                            │
+├─────────────────────────────────────────────────────────────────────┤
+│ POST   /api/documents/upload/                    - Upload document  │
+│ GET    /api/documents/my-documents/              - My documents     │
+│ GET    /api/documents/{id}/                      - View document    │
+│ PUT    /api/documents/{id}/update/               - Update           │
+│ DELETE /api/documents/{id}/delete/               - Delete           │
+│ POST   /api/documents/{id}/share/                - Share via email  │
+│ POST   /api/documents/{id}/share-with-doctor/    - Share w/ doctor  │
+│ POST   /api/documents/{id}/unshare-with-doctor/  - Unshare          │
+│ GET    /api/documents/{id}/access-logs/          - View logs        │
+│ GET    /api/documents/doctor/shared-documents/   - Doctor's docs    │
+│ GET    /api/documents/shared/{token}/            - Public link      │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                        MEDICATION ENDPOINTS                          │
+├─────────────────────────────────────────────────────────────────────┤
+│ POST   /api/medications/create/                  - Add medication   │
+│ GET    /api/medications/my-medications/          - My medications   │
+│ GET    /api/medications/{id}/                    - View details     │
+│ PUT    /api/medications/{id}/update/             - Update           │
+│ DELETE /api/medications/{id}/delete/             - Deactivate       │
+│ POST   /api/medications/{id}/add-schedule/       - Add schedule     │
+│ GET    /api/medications/{id}/schedules/          - View schedules   │
+│ POST   /api/medications/{id}/log/                - Log dose         │
+│ GET    /api/medications/{id}/logs/               - View logs        │
+│ GET    /api/medications/todays-doses/            - Today's schedule │
+│ POST   /api/medications/refill/request/          - Request refill   │
+│ GET    /api/medications/refill/my-requests/      - My refills       │
+│ GET    /api/medications/refill/doctor-requests/  - Doctor's refills │
+│ POST   /api/medications/refill/{id}/approve/     - Approve refill   │
+│ GET    /api/medications/stats/                   - Dashboard stats  │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                        API DOCUMENTATION                             │
+├─────────────────────────────────────────────────────────────────────┤
+│ GET    /swagger/                         - Swagger UI               │
+│ GET    /redoc/                           - ReDoc UI                 │
+│ GET    /swagger.json                     - OpenAPI JSON             │
+└─────────────────────────────────────────────────────────────────────┘
+
+AUTHENTICATION:
+All protected endpoints require JWT Bearer token:
+Authorization: Bearer {your_access_token}
+
+Get token from /api/users/login/
