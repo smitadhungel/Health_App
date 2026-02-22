@@ -1,4 +1,3 @@
-// src/screens/auth/RegisterScreen.tsx
 import React, { useState } from 'react';
 import {
   View,
@@ -12,10 +11,37 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authAPI } from '../../services/api';
 
+// Define types for form data
+interface RegisterFormData {
+  email: string;
+  username: string;
+  password: string;
+  password2: string;
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+  role: 'PATIENT' | 'DOCTOR';
+}
+
+// Expected response from your backend after registration
+interface RegisterResponse {
+  user?: {
+    id: number;
+    email: string;
+    username: string;
+    role: string;
+    // ... other fields
+  };
+  access?: string;   // if auto-login is enabled
+  refresh?: string;  // if auto-login is enabled
+  message?: string;  // e.g., "Account created successfully"
+}
+
 export default function RegisterScreen({ navigation }: any) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<RegisterFormData>({
     email: '',
     username: '',
     password: '',
@@ -23,64 +49,111 @@ export default function RegisterScreen({ navigation }: any) {
     first_name: '',
     last_name: '',
     phone_number: '',
-    role: 'PATIENT', // Default role
+    role: 'PATIENT',
   });
   const [loading, setLoading] = useState(false);
 
-  const handleRegister = async () => {
-  console.log('=== REGISTRATION START ===');
-  console.log('Form data:', formData);
-  
-  if (!formData.email || !formData.username || !formData.password || !formData.first_name || !formData.last_name) {
-    Alert.alert('Error', 'Please fill in all required fields');
-    return;
-  }
+  // Handle input changes
+  const handleChange = (field: keyof RegisterFormData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
-  if (formData.password !== formData.password2) {
-    Alert.alert('Error', 'Passwords do not match');
-    return;
-  }
+  // Validate form
+  const validateForm = (): boolean => {
+    const { email, username, password, password2, first_name, last_name } = formData;
 
-  setLoading(true);
-  try {
-    console.log('Calling authAPI.register...');
-    const response = await authAPI.register(formData);
-    console.log('Registration SUCCESS:', response);
-    
-    Alert.alert('Success', 'Registration successful! Please login.', [
-      { text: 'OK', onPress: () => navigation.navigate('Login') },
-    ]);
-  } catch (error: any) {
-    console.log('=== ERROR CAUGHT ===');
-    console.log('Full error object:', error);
-    console.log('Error message:', error?.message);
-    console.log('Error response:', error?.response);
-    console.log('Error response data:', error?.response?.data);
-    console.log('Error response status:', error?.response?.status);
-    console.log('Error config:', error?.config);
-    
-    let errorMessage = 'Registration failed';
-    
-    if (error?.response?.data) {
-      // Backend returned an error
-      const data = error.response.data;
-      errorMessage = data.email?.[0] || 
-                    data.username?.[0] ||
-                    data.password?.[0] ||
-                    data.error ||
-                    JSON.stringify(data);
-    } else if (error?.message) {
-      // Network or other error
-      errorMessage = error.message;
+    if (!email || !username || !password || !first_name || !last_name) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return false;
     }
-    
-    console.log('Final error message:', errorMessage);
-    Alert.alert('Registration Failed', errorMessage);
-  } finally {
-    setLoading(false);
-    console.log('=== REGISTRATION END ===');
-  }
-};
+
+    if (password !== password2) {
+      Alert.alert('Error', 'Passwords do not match');
+      return false;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters');
+      return false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return false;
+    }
+
+    return true;
+  };
+
+  // Handle registration
+  const handleRegister = async () => {
+    if (!validateForm()) return;
+
+    setLoading(true);
+    try {
+      console.log('Registering with:', formData);
+      const response = await authAPI.register(formData) as RegisterResponse;
+      console.log('Registration response:', response);
+
+      // CASE 1: Backend returns tokens (auto‑login)
+      if (response?.access && response?.refresh) {
+        await AsyncStorage.setItem('access_token', response.access);
+        await AsyncStorage.setItem('refresh_token', response.refresh);
+
+        // Get user role from response or fallback to form role
+        const userRole = response.user?.role || formData.role;
+        await AsyncStorage.setItem('user_role', userRole);
+
+        // Navigate based on role
+       if (userRole === 'DOCTOR') {
+          navigation.replace('DoctorDetails');
+      } else {
+          navigation.replace('PatientHome');
+}
+      }
+      // CASE 2: Only a success message (no tokens) – ask user to log in
+      else {
+        Alert.alert(
+          'Success',
+          response.message || 'Account created successfully! Please log in.',
+          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+        );
+      }
+    } catch (error: any) {
+      console.error('Registration error:', error);
+
+      // Extract error message from backend
+      let errorMessage = 'Registration failed. Please try again.';
+      if (error.response?.data) {
+        const data = error.response.data;
+        if (typeof data === 'string') {
+          errorMessage = data;
+        } else if (data.detail) {
+          errorMessage = data.detail;
+        } else if (data.email) {
+          errorMessage = `Email: ${Array.isArray(data.email) ? data.email.join(', ') : data.email}`;
+        } else if (data.username) {
+          errorMessage = `Username: ${Array.isArray(data.username) ? data.username.join(', ') : data.username}`;
+        } else if (data.password) {
+          errorMessage = `Password: ${Array.isArray(data.password) ? data.password.join(', ') : data.password}`;
+        } else if (data.error) {
+          errorMessage = data.error;
+        } else if (data.message) {
+          errorMessage = data.message;
+        } else {
+          // Fallback: stringify the whole object for debugging
+          errorMessage = JSON.stringify(data);
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      Alert.alert('Registration Failed', errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -90,113 +163,101 @@ export default function RegisterScreen({ navigation }: any) {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
           <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Sign up to get started</Text>
+          <Text style={styles.subtitle}>Join us to manage your health</Text>
 
           {/* Role Selection */}
           <View style={styles.roleContainer}>
-            <Text style={styles.roleLabel}>I am a:</Text>
-            <View style={styles.roleButtons}>
-              <TouchableOpacity
-                style={[
-                  styles.roleButton,
-                  formData.role === 'PATIENT' && styles.roleButtonActive,
-                ]}
-                onPress={() => setFormData({ ...formData, role: 'PATIENT' })}
-              >
-                <Text
-                  style={[
-                    styles.roleButtonText,
-                    formData.role === 'PATIENT' && styles.roleButtonTextActive,
-                  ]}
-                >
-                  Patient
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.roleButton,
-                  formData.role === 'DOCTOR' && styles.roleButtonActive,
-                ]}
-                onPress={() => setFormData({ ...formData, role: 'DOCTOR' })}
-              >
-                <Text
-                  style={[
-                    styles.roleButtonText,
-                    formData.role === 'DOCTOR' && styles.roleButtonTextActive,
-                  ]}
-                >
-                  Doctor
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              style={[styles.roleButton, formData.role === 'PATIENT' && styles.roleActive]}
+              onPress={() => handleChange('role', 'PATIENT')}
+            >
+              <Text style={[styles.roleText, formData.role === 'PATIENT' && styles.roleTextActive]}>
+                Patient
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.roleButton, formData.role === 'DOCTOR' && styles.roleActive]}
+              onPress={() => handleChange('role', 'DOCTOR')}
+            >
+              <Text style={[styles.roleText, formData.role === 'DOCTOR' && styles.roleTextActive]}>
+                Doctor
+              </Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.form}>
+            {/* First Name */}
             <TextInput
               style={styles.input}
               placeholder="First Name *"
               value={formData.first_name}
-              onChangeText={(text) => setFormData({ ...formData, first_name: text })}
+              onChangeText={(text) => handleChange('first_name', text)}
               placeholderTextColor="#999"
             />
 
+            {/* Last Name */}
             <TextInput
               style={styles.input}
               placeholder="Last Name *"
               value={formData.last_name}
-              onChangeText={(text) => setFormData({ ...formData, last_name: text })}
+              onChangeText={(text) => handleChange('last_name', text)}
               placeholderTextColor="#999"
             />
 
+            {/* Username */}
             <TextInput
               style={styles.input}
               placeholder="Username *"
               value={formData.username}
-              onChangeText={(text) => setFormData({ ...formData, username: text })}
+              onChangeText={(text) => handleChange('username', text)}
               autoCapitalize="none"
               placeholderTextColor="#999"
             />
 
+            {/* Email */}
             <TextInput
               style={styles.input}
               placeholder="Email *"
               value={formData.email}
-              onChangeText={(text) => setFormData({ ...formData, email: text })}
+              onChangeText={(text) => handleChange('email', text)}
               keyboardType="email-address"
               autoCapitalize="none"
               placeholderTextColor="#999"
             />
 
+            {/* Phone Number */}
             <TextInput
               style={styles.input}
-              placeholder="Phone Number"
+              placeholder="Phone Number (optional)"
               value={formData.phone_number}
-              onChangeText={(text) => setFormData({ ...formData, phone_number: text })}
+              onChangeText={(text) => handleChange('phone_number', text)}
               keyboardType="phone-pad"
               placeholderTextColor="#999"
             />
 
+            {/* Password */}
             <TextInput
               style={styles.input}
               placeholder="Password *"
               value={formData.password}
-              onChangeText={(text) => setFormData({ ...formData, password: text })}
+              onChangeText={(text) => handleChange('password', text)}
               secureTextEntry
               autoCapitalize="none"
               placeholderTextColor="#999"
             />
 
+            {/* Confirm Password */}
             <TextInput
               style={styles.input}
               placeholder="Confirm Password *"
               value={formData.password2}
-              onChangeText={(text) => setFormData({ ...formData, password2: text })}
+              onChangeText={(text) => handleChange('password2', text)}
               secureTextEntry
               autoCapitalize="none"
               placeholderTextColor="#999"
             />
 
+            {/* Register Button */}
             <TouchableOpacity
               style={styles.button}
               onPress={handleRegister}
@@ -205,12 +266,11 @@ export default function RegisterScreen({ navigation }: any) {
               {loading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.buttonText}>
-                  Register as {formData.role === 'PATIENT' ? 'Patient' : 'Doctor'}
-                </Text>
+                <Text style={styles.buttonText}>Create Account</Text>
               )}
             </TouchableOpacity>
 
+            {/* Link to Login */}
             <TouchableOpacity
               style={styles.linkButton}
               onPress={() => navigation.navigate('Login')}
@@ -238,51 +298,47 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 20,
-    paddingTop: 60,
+    paddingTop: 40,
+    paddingBottom: 40,
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
     marginBottom: 8,
     color: '#000',
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
     color: '#666',
-    marginBottom: 20,
+    marginBottom: 30,
+    textAlign: 'center',
   },
   roleContainer: {
-    marginBottom: 25,
-  },
-  roleLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 12,
-  },
-  roleButtons: {
     flexDirection: 'row',
-    gap: 12,
+    justifyContent: 'space-between',
+    marginBottom: 20,
   },
   roleButton: {
     flex: 1,
-    padding: 15,
-    borderRadius: 10,
-    borderWidth: 2,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderWidth: 1,
     borderColor: '#e0e0e0',
+    borderRadius: 8,
+    marginHorizontal: 5,
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#f5f5f5',
   },
-  roleButtonActive: {
-    borderColor: '#007AFF',
-    backgroundColor: '#007AFF',
+  roleActive: {
+    backgroundColor: '#4f46e5',
+    borderColor: '#4f46e5',
   },
-  roleButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+  roleText: {
     color: '#666',
+    fontWeight: '500',
   },
-  roleButtonTextActive: {
+  roleTextActive: {
     color: '#fff',
   },
   form: {
@@ -299,8 +355,8 @@ const styles = StyleSheet.create({
     borderColor: '#e0e0e0',
   },
   button: {
-    backgroundColor: '#007AFF',
-    padding: 15,
+    backgroundColor: '#4f46e5',
+    padding: 16,
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 10,
@@ -319,7 +375,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   linkBold: {
-    color: '#007AFF',
+    color: '#4f46e5',
     fontWeight: '600',
   },
 });

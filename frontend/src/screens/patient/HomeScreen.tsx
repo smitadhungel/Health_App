@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { appointmentsAPI, medicationsAPI } from '../services/api';
+import { appointmentsAPI, medicationsAPI } from '../../services/api';
+
 
 export default function HomeScreen({ navigation }: any) {
   const [user, setUser] = useState<any>(null);

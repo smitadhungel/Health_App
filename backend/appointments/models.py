@@ -1,11 +1,8 @@
-# ============================================
-# appointments/models.py
-# ============================================
-
 from django.db import models
+from django.core.exceptions import ValidationError
 from django.conf import settings
 from doctor.models import DoctorProfile
-
+from datetime import datetime, date, time, timedelta
 
 class Appointment(models.Model):
     """Appointment booking model"""
@@ -52,19 +49,54 @@ class Appointment(models.Model):
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         db_table = 'appointments'
         ordering = ['-appointment_date', '-appointment_time']
-        unique_together = ['doctor', 'appointment_date', 'appointment_time']
+        constraints = [
+            # Prevent double-booking at exact same time
+            models.UniqueConstraint(
+                fields=['doctor', 'appointment_date', 'appointment_time'],
+                name='unique_doctor_appointment_slot'
+            )
+        ]
+        indexes = [
+            models.Index(fields=['doctor', 'appointment_date', 'status']),
+            models.Index(fields=['patient', 'appointment_date']),
+        ]
     
     def __str__(self):
         return f"{self.patient.get_full_name()} → Dr. {self.doctor.user.get_full_name()} ({self.appointment_date} {self.appointment_time})"
     
+    def clean(self):
+        """Prevent overlapping appointments for the same doctor (if durations vary)."""
+        if self.status in ['CANCELLED', 'COMPLETED']:
+            return  # Skip validation for non-active appointments
+        
+        # Calculate end time
+        start_datetime = datetime.combine(self.appointment_date, self.appointment_time)
+        end_datetime = start_datetime + timedelta(minutes=self.duration_minutes)
+        
+        # Find any overlapping confirmed/pending appointments for the same doctor
+        overlapping = Appointment.objects.filter(
+            doctor=self.doctor,
+            appointment_date=self.appointment_date,
+            status__in=['PENDING', 'CONFIRMED']
+        ).exclude(pk=self.pk)
+        
+        for apt in overlapping:
+            apt_start = datetime.combine(apt.appointment_date, apt.appointment_time)
+            apt_end = apt_start + timedelta(minutes=apt.duration_minutes)
+            
+            if (start_datetime < apt_end and end_datetime > apt_start):
+                raise ValidationError(
+                    f"Appointment overlaps with existing appointment from "
+                    f"{apt.appointment_time} (duration {apt.duration_minutes} mins)."
+                )
+    
     @property
     def is_upcoming(self):
         """Check if appointment is in the future"""
-        from datetime import datetime, date, time
         now = datetime.now()
         appointment_datetime = datetime.combine(self.appointment_date, self.appointment_time)
         return appointment_datetime > now and self.status in ['PENDING', 'CONFIRMED']
@@ -100,6 +132,9 @@ class AppointmentHistory(models.Model):
     class Meta:
         db_table = 'appointment_history'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['appointment', 'created_at']),
+        ]
     
     def __str__(self):
         return f"History: Appointment #{self.appointment.id} - {self.created_at}"

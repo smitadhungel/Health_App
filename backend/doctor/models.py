@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 from django.conf import settings
 
 class DoctorProfile(models.Model):
@@ -41,6 +42,10 @@ class DoctorProfile(models.Model):
     class Meta:
         db_table = 'doctor_profiles'
         ordering = ['-rating', '-experience_years']
+        indexes = [
+            models.Index(fields=['specialization']),
+            models.Index(fields=['is_available']),
+        ]
     
     def __str__(self):
         return f"Dr. {self.user.get_full_name()} - {self.get_specialization_display()}"
@@ -75,11 +80,46 @@ class DoctorAvailability(models.Model):
 
     class Meta:
         db_table = 'doctor_availability'
-        unique_together = ['doctor', 'day_of_week', 'start_time']
+        constraints = [
+            # Ensure end_time > start_time
+            models.CheckConstraint(
+                check=models.Q(end_time__gt=models.F('start_time')),
+                name='end_time_after_start'
+            ),
+            # Unique per doctor, day, start_time (prevents duplicate start times)
+            models.UniqueConstraint(
+                fields=['doctor', 'day_of_week', 'start_time'],
+                name='unique_doctor_day_start'
+            )
+        ]
         ordering = ['day_of_week', 'start_time']
     
     def __str__(self):
         return f"{self.doctor.user.get_full_name()} - {self.get_day_of_week_display()} ({self.start_time}-{self.end_time})"
+
+    def clean(self):
+        """Validate that this availability does not overlap with existing ones for the same doctor and day."""
+        if self.end_time <= self.start_time:
+            raise ValidationError('End time must be after start time.')
+        
+        # Check overlapping intervals
+        overlapping = DoctorAvailability.objects.filter(
+            doctor=self.doctor,
+            day_of_week=self.day_of_week,
+            is_active=True
+        ).exclude(pk=self.pk)
+        
+        for avail in overlapping:
+            # Check if time intervals overlap
+            if (self.start_time < avail.end_time and self.end_time > avail.start_time):
+                raise ValidationError(
+                    f'This time slot overlaps with existing availability: '
+                    f'{avail.start_time}-{avail.end_time}'
+                )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()  # calls clean()
+        super().save(*args, **kwargs)
 
 
 class DoctorReview(models.Model):
@@ -110,4 +150,4 @@ class DoctorReview(models.Model):
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"{self.patient.get_full_name()} → Dr. {self.doctor.user.get_full_name()} ({self.rating}⭐)"
+        return f"{self.patient.get_full_name()} → Dr. {self.doctor.user.get_full_name()} ({self.rating})"

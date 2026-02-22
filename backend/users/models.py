@@ -40,17 +40,13 @@ class User(AbstractUser):
         related_query_name='custom_user',
     )
 
-    # here lets make the email unique identifier 
-    USERNAME_FIELD ='email'
-    REQUIRED_FIELDS=['username','first_name','last_name']
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
     class Meta:
-        verbose_name="User"
-        verbose_name_plural='Users'
+        verbose_name = "User"
+        verbose_name_plural = 'Users'
         db_table = 'users'
 
-    
     def __str__(self):
-        return f"{self.username} ({self.get_role_display()})"
-    
-   
+        return f"{self.get_full_name()} ({self.get_role_display()})"

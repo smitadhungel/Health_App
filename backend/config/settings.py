@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'appointments',
     'medications',
     'documents',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -51,8 +52,10 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'config.urls'
 
 CORS_ALLOW_ALL_ORIGINS = True
-ALLOWED_HOSTS = ['192.168.1.5', '127.0.0.1', 'localhost']
-
+ALLOWED_HOSTS = ['192.168.1.5', '127.0.0.1', '192.168.100.9']
+CORS_ALLOW_CREDENTIALS = True
+# Default primary key field type
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
