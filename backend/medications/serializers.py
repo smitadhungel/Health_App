@@ -290,3 +290,23 @@ class MedicationStatsSerializer(serializers.Serializer):
     doses_taken_today = serializers.IntegerField()
     doses_missed_today = serializers.IntegerField()
     upcoming_doses = serializers.ListField()
+
+
+class CreateMedicationSerializer(serializers.ModelSerializer):
+    """Serializer for creating medications"""
+    schedules = MedicationScheduleSerializer(many=True, required=False)
+    
+    class Meta:
+        model = Medication
+        fields = [
+            'prescribed_by', 'appointment', 'name', 'generic_name',
+            'form', 'dosage', 'frequency', 'start_date', 'end_date',
+            'duration_days', 'instructions', 'side_effects',
+            'schedules'
+        ]
+    
+    def create(self, validated_data):
+        schedules_data = validated_data.pop('schedules', [])
+        medication = Medication.objects.create(**validated_data)
+        # ... create schedules
+        return medication

@@ -192,6 +192,31 @@ class DocumentAccessLog(models.Model):
             models.Index(fields=['accessed_by', 'accessed_at']),
         ]
     
+        def __str__(self):
+            user = self.accessed_by.get_full_name() if self.accessed_by else 'Unknown'
+            return f"{user} {self.action} {self.document.title}"
+    
+    
+class AppointmentDocument(models.Model):
+    appointment = models.ForeignKey(
+            'appointments.Appointment',  # adjust import as needed
+            on_delete=models.CASCADE,
+            related_name='shared_documents'
+        )
+    document = models.ForeignKey(
+            MedicalDocument,
+            on_delete=models.CASCADE,
+            related_name='appointment_links'
+        )
+    shared_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)  # optional
+    
+    class Meta:
+            unique_together = ('appointment', 'document')  # prevent duplicates
+            indexes = [
+                models.Index(fields=['appointment']),
+                models.Index(fields=['document']),
+            ]
+    
     def __str__(self):
-        user = self.accessed_by.get_full_name() if self.accessed_by else 'Unknown'
-        return f"{user} {self.action} {self.document.title}"
+            return f"{self.document.title} for appointment #{self.appointment.id}"

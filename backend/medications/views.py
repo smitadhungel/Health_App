@@ -7,6 +7,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q, Count
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from datetime import date, datetime, timedelta
 from .models import (
     Medication, MedicationSchedule, MedicationLog,
@@ -28,40 +30,37 @@ from .serializers import (
 )
 from .permissions import IsPatient, IsDoctor, IsMedicationOwner
 
-
+User = get_user_model()
 # ============================================
 # MEDICATION MANAGEMENT VIEWS
 # ============================================
 
 class CreateMedicationView(generics.CreateAPIView):
-    """Create a new medication (patients or doctors can create)"""
     serializer_class = CreateMedicationSerializer
     permission_classes = [IsAuthenticated]
-    
+
     def perform_create(self, serializer):
         user = self.request.user
-        
-        # If patient, set patient to self
+        # For patients, automatically set patient = themselves
         if user.role == 'PATIENT':
-            serializer.save(patient=user)
-        # If doctor, patient must be provided
-        else:
-            serializer.save()
-    
+            return serializer.save(patient=user)
+        # For doctors, patient must be provided in the request
+        patient_id = self.request.data.get('patient')
+        if not patient_id:
+            raise ValidationError({'patient': 'Patient is required when a doctor creates a medication.'})
+        try:
+            patient = User.objects.get(id=patient_id, role='PATIENT')
+        except User.DoesNotExist:
+            raise ValidationError({'patient': 'Invalid patient ID.'})
+        return serializer.save(patient=patient)
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
-        # Additional validation for doctors
-        if request.user.role == 'DOCTOR':
-            if 'patient' not in request.data:
-                return Response(
-                    {'error': 'Patient is required when doctor creates medication'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-        
-        medication = serializer.save()
-        
+        try:
+            medication = self.perform_create(serializer)   # now returns the instance
+        except ValidationError as e:
+            return Response(e.message_dict, status=status.HTTP_400_BAD_REQUEST)
         return Response({
             'message': 'Medication added successfully',
             'medication': MedicationSerializer(medication).data
@@ -521,3 +520,4 @@ class MedicationStatsView(APIView):
         
         serializer = MedicationStatsSerializer(stats)
         return Response(serializer.data)
+    

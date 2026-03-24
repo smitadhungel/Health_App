@@ -12,6 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-esg6xa3ivh#4u6hh^x3rlr!t4-*l)fiju(edkox&fqbc67jm&_'
+GOOGLE_PLACES_API_KEY = 'AIzaSyCw3ll3NpmbunKvXC6G1ohzs73TwZaYh5c'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -36,6 +37,7 @@ INSTALLED_APPS = [
     'medications',
     'documents',
     'corsheaders',
+    'place',
 ]
 
 MIDDLEWARE = [

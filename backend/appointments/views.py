@@ -298,7 +298,7 @@ class DoctorAppointmentsListView(generics.ListAPIView):
                 pass
         
         # Today's appointments by default
-        filter_type = self.request.query_params.get('filter', 'today')
+        filter_type = self.request.query_params.get('filter', 'upcoming')
         if filter_type == 'today':
             queryset = queryset.filter(appointment_date=date.today())
         elif filter_type == 'upcoming':

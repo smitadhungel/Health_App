@@ -109,6 +109,56 @@
         }
       }
     },
+    "react-native-image-crop-picker": {
+      "root": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-image-crop-picker",
+      "name": "react-native-image-crop-picker",
+      "platforms": {
+        "ios": {
+          "podspecPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-image-crop-picker/RNImageCropPicker.podspec",
+          "version": "0.51.1",
+          "configurations": [],
+          "scriptPhases": []
+        },
+        "android": {
+          "sourceDir": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-image-crop-picker/android",
+          "packageImportPath": "import com.reactnative.ivpusic.imagepicker.PickerPackage;",
+          "packageInstance": "new PickerPackage()",
+          "buildTypes": [],
+          "libraryName": "RNCImageCropPickerSpec",
+          "componentDescriptors": [],
+          "cmakeListsPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-image-crop-picker/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cxxModuleCMakeListsModuleName": null,
+          "cxxModuleCMakeListsPath": null,
+          "cxxModuleHeaderName": null,
+          "isPureCxxDependency": false
+        }
+      }
+    },
+    "react-native-image-picker": {
+      "root": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-image-picker",
+      "name": "react-native-image-picker",
+      "platforms": {
+        "ios": {
+          "podspecPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-image-picker/react-native-image-picker.podspec",
+          "version": "8.2.1",
+          "configurations": [],
+          "scriptPhases": []
+        },
+        "android": {
+          "sourceDir": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-image-picker/android",
+          "packageImportPath": "import com.imagepicker.ImagePickerPackage;",
+          "packageInstance": "new ImagePickerPackage()",
+          "buildTypes": [],
+          "libraryName": "RNImagePickerSpec",
+          "componentDescriptors": [],
+          "cmakeListsPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-image-picker/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cxxModuleCMakeListsModuleName": null,
+          "cxxModuleCMakeListsPath": null,
+          "cxxModuleHeaderName": null,
+          "isPureCxxDependency": false
+        }
+      }
+    },
     "react-native-reanimated": {
       "root": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-reanimated",
       "name": "react-native-reanimated",
@@ -194,6 +244,61 @@
             "RNSSafeAreaViewComponentDescriptor"
           ],
           "cmakeListsPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-screens/android/src/main/jni/CMakeLists.txt",
+          "cxxModuleCMakeListsModuleName": null,
+          "cxxModuleCMakeListsPath": null,
+          "cxxModuleHeaderName": null,
+          "isPureCxxDependency": false
+        }
+      }
+    },
+    "react-native-svg": {
+      "root": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-svg",
+      "name": "react-native-svg",
+      "platforms": {
+        "ios": {
+          "podspecPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-svg/RNSVG.podspec",
+          "version": "15.15.3",
+          "configurations": [],
+          "scriptPhases": []
+        },
+        "android": {
+          "sourceDir": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-svg/android",
+          "packageImportPath": "import com.horcrux.svg.SvgPackage;",
+          "packageInstance": "new SvgPackage()",
+          "buildTypes": [],
+          "libraryName": "rnsvg",
+          "componentDescriptors": [
+            "RNSVGCircleComponentDescriptor",
+            "RNSVGClipPathComponentDescriptor",
+            "RNSVGDefsComponentDescriptor",
+            "RNSVGFeBlendComponentDescriptor",
+            "RNSVGFeColorMatrixComponentDescriptor",
+            "RNSVGFeCompositeComponentDescriptor",
+            "RNSVGFeFloodComponentDescriptor",
+            "RNSVGFeGaussianBlurComponentDescriptor",
+            "RNSVGFeMergeComponentDescriptor",
+            "RNSVGFeOffsetComponentDescriptor",
+            "RNSVGFilterComponentDescriptor",
+            "RNSVGEllipseComponentDescriptor",
+            "RNSVGForeignObjectComponentDescriptor",
+            "RNSVGGroupComponentDescriptor",
+            "RNSVGImageComponentDescriptor",
+            "RNSVGLinearGradientComponentDescriptor",
+            "RNSVGLineComponentDescriptor",
+            "RNSVGMarkerComponentDescriptor",
+            "RNSVGMaskComponentDescriptor",
+            "RNSVGPathComponentDescriptor",
+            "RNSVGPatternComponentDescriptor",
+            "RNSVGRadialGradientComponentDescriptor",
+            "RNSVGRectComponentDescriptor",
+            "RNSVGSvgViewAndroidComponentDescriptor",
+            "RNSVGSymbolComponentDescriptor",
+            "RNSVGTextComponentDescriptor",
+            "RNSVGTextPathComponentDescriptor",
+            "RNSVGTSpanComponentDescriptor",
+            "RNSVGUseComponentDescriptor"
+          ],
+          "cmakeListsPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-svg/android/src/main/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,

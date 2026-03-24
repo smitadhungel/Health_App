@@ -10,9 +10,26 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { PatientStackParamList } from '../../navigation/types';
 import { authAPI } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import {
+  Mail,
+  Phone,
+  Calendar,
+  List,
+  Pill,
+  FileText,
+  AlertCircle,
+  ChevronRight,
+  ArrowRight,
+  LogOut,
+  Stethoscope,
+} from 'lucide-react-native';
 
-// Define TypeScript interfaces for better type safety
+type PatientHomeNavigationProp = NativeStackNavigationProp<PatientStackParamList, 'PatientHome'>;
+
 interface User {
   id: number;
   first_name: string;
@@ -22,28 +39,20 @@ interface User {
   user_type: string;
 }
 
-interface NavigationProps {
-  reset: (params: { index: number; routes: Array<{ name: string }> }) => void;
-  navigate: (screen: string) => void;
-}
-
 export default function PatientHomeScreen() {
-  // Set up navigation with proper typing
-  const navigation = useNavigation<NavigationProps>();
+  const navigation = useNavigation<PatientHomeNavigationProp>();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { signOut } = useAuth();
 
   useEffect(() => {
     loadUserData();
   }, []);
 
-  // Load user data from AsyncStorage
   const loadUserData = async () => {
     try {
       const userData = await AsyncStorage.getItem('user');
-      if (userData) {
-        setUser(JSON.parse(userData));
-      }
+      if (userData) setUser(JSON.parse(userData));
     } catch (error) {
       console.error('Error loading user data:', error);
     } finally {
@@ -51,48 +60,27 @@ export default function PatientHomeScreen() {
     }
   };
 
-  // Handle logout functionality
-  const handleLogout = async () => {
+  const handleLogout = () => {
     Alert.alert(
       'Logout',
       'Are you sure you want to logout?',
       [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Logout',
           style: 'destructive',
           onPress: async () => {
             try {
-              // Get refresh token
               const refreshToken = await AsyncStorage.getItem('refresh_token');
-              
               if (refreshToken) {
-                // Call backend to blacklist token
                 try {
                   await authAPI.logout(refreshToken);
-                  console.log('Token blacklisted successfully');
                 } catch (error) {
                   console.log('Logout API error (continuing anyway):', error);
                 }
               }
-              
-              // Clear all stored data
-              await AsyncStorage.multiRemove([
-                'access_token',
-                'refresh_token',
-                'user',
-              ]);
-              
+              await signOut();
               console.log('Logged out successfully');
-              
-              // Navigate to login screen
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Login' }],
-              });
             } catch (error) {
               console.error('Logout error:', error);
               Alert.alert('Error', 'Failed to logout. Please try again.');
@@ -107,119 +95,119 @@ export default function PatientHomeScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4f46e5" />
+        <ActivityIndicator size="large" color="#16a34a" />
       </View>
     );
   }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Header Section */}
-      <Text style={styles.title}>
-        👋 Welcome, {user?.first_name || 'Patient'}
-      </Text>
-      <Text style={styles.subtitle}>
-        Manage your health in one place
-      </Text>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.title}>Welcome,</Text>
+        <Text style={styles.name}>{user?.first_name || 'Patient'}</Text>
+        <Text style={styles.subtitle}>Manage your health in one place</Text>
+      </View>
 
-      {/* User Info Card */}
+      {/* Quick Info Card */}
       {user && (
         <View style={styles.infoCard}>
-          <Text style={styles.infoText}>📧 {user.email}</Text>
+          <Mail size={16} color="#166534" />
+          <Text style={styles.infoText}>{user.email}</Text>
           {user.phone_number && (
-            <Text style={styles.infoText}>📱 {user.phone_number}</Text>
+            <>
+              <Phone size={16} color="#166534" style={styles.phoneIcon} />
+              <Text style={styles.infoText}>{user.phone_number}</Text>
+            </>
           )}
         </View>
       )}
 
-      {/* Feature Cards */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>🩺 Book Appointment</Text>
-        <Text style={styles.cardText}>
-          Schedule a visit with a doctor
-        </Text>
+      {/* Feature Grid */}
+      <View style={styles.grid}>
         <TouchableOpacity
-          style={styles.button}
+          style={styles.gridCard}
           onPress={() => navigation.navigate('BookAppointment')}
         >
-          <Text style={styles.buttonText}>Book Now</Text>
+          <View style={[styles.iconCircle, { backgroundColor: '#e0f2fe' }]}>
+            <Calendar size={28} color="#0284c7" />
+          </View>
+          <Text style={styles.gridTitle}>Book</Text>
+          <Text style={styles.gridSubtitle}>Appointment</Text>
         </TouchableOpacity>
-      </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>📋 My Appointments</Text>
-        <Text style={styles.cardText}>
-          View upcoming and past appointments
-        </Text>
         <TouchableOpacity
-          style={styles.button}
+          style={styles.gridCard}
           onPress={() => navigation.navigate('MyAppointments')}
         >
-          <Text style={styles.buttonText}>View</Text>
+          <View style={[styles.iconCircle, { backgroundColor: '#fef9c3' }]}>
+            <List size={28} color="#ca8a04" />
+          </View>
+          <Text style={styles.gridTitle}>My</Text>
+          <Text style={styles.gridSubtitle}>Appointments</Text>
         </TouchableOpacity>
-      </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>💊 My Medications</Text>
-        <Text style={styles.cardText}>
-          Track your medications and reminders
-        </Text>
         <TouchableOpacity
-          style={styles.button}
+          style={styles.gridCard}
           onPress={() => navigation.navigate('Medications')}
         >
-          <Text style={styles.buttonText}>Open</Text>
+          <View style={[styles.iconCircle, { backgroundColor: '#dcfce7' }]}>
+            <Pill size={28} color="#16a34a" />
+          </View>
+          <Text style={styles.gridTitle}>Medications</Text>
+          <Text style={styles.gridSubtitle}>Track & Reminders</Text>
         </TouchableOpacity>
-      </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>📄 Medical Documents</Text>
-        <Text style={styles.cardText}>
-          Upload and view your medical records
-        </Text>
         <TouchableOpacity
-          style={styles.button}
+          style={styles.gridCard}
           onPress={() => navigation.navigate('Documents')}
         >
-          <Text style={styles.buttonText}>Open</Text>
+          <View style={[styles.iconCircle, { backgroundColor: '#f1f5f9' }]}>
+            <FileText size={28} color="#334155" />
+          </View>
+          <Text style={styles.gridTitle}>Medical</Text>
+          <Text style={styles.gridSubtitle}>Documents</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Emergency Contact Card */}
-      <View style={[styles.card, styles.emergencyCard]}>
-        <Text style={styles.cardTitle}>🚑 Emergency</Text>
-        <Text style={styles.cardText}>
-          In case of emergency, contact your doctor immediately
-        </Text>
-        <TouchableOpacity
-          style={[styles.button, styles.emergencyButton]}
-          onPress={() => Alert.alert('Emergency', 'Call emergency services: 911')}
-        >
-          <Text style={styles.buttonText}>Emergency Contact</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Doctor Registration Card - FIXED: Moved inside return and fixed condition */}
-      {user && user.user_type === 'patient' && (
-        <View style={styles.doctorRegistrationCard}>
-          <Text style={styles.doctorRegistrationTitle}>👨‍⚕️ Are you a doctor?</Text>
-          <Text style={styles.doctorRegistrationText}>
-            Register as a doctor to start accepting appointments and manage your practice.
-          </Text>
-          <TouchableOpacity
-            style={styles.doctorRegistrationButton}
-            onPress={() => navigation.navigate('DoctorRegistration')}
-          >
-            <Text style={styles.doctorRegistrationButtonText}>
-              Register as Doctor
-            </Text>
-          </TouchableOpacity>
+      {/* Emergency Card */}
+      <TouchableOpacity
+        style={styles.emergencyCard}
+        onPress={() => Alert.alert('Emergency', 'Call emergency services: 911')}
+      >
+        <View style={styles.emergencyIcon}>
+          <AlertCircle size={32} color="#fff" />
         </View>
+        <View style={styles.emergencyTextContainer}>
+          <Text style={styles.emergencyTitle}>Emergency</Text>
+          <Text style={styles.emergencySubtitle}>Tap to call ambulance</Text>
+        </View>
+        <ChevronRight size={24} color="#fff" />
+      </TouchableOpacity>
+
+      {/* Doctor Registration Card */}
+      {user && user.user_type === 'patient' && (
+        <TouchableOpacity
+          style={styles.doctorCard}
+          onPress={() => navigation.navigate('DoctorRegistration')}
+        >
+          <View style={styles.doctorIcon}>
+            <Stethoscope size={32} color="#16a34a" />
+          </View>
+          <View style={styles.doctorTextContainer}>
+            <Text style={styles.doctorTitle}>Are you a doctor?</Text>
+            <Text style={styles.doctorSubtitle}>
+              Register to start accepting appointments
+            </Text>
+          </View>
+          <ArrowRight size={24} color="#16a34a" />
+        </TouchableOpacity>
       )}
 
       {/* Logout Button */}
-      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-        <Text style={styles.logoutText}>🚪 Logout</Text>
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <LogOut size={22} color="#dc2626" />
+        <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -228,120 +216,175 @@ export default function PatientHomeScreen() {
 const styles = StyleSheet.create({
   container: {
     padding: 20,
-    backgroundColor: '#f5f7fb',
+    backgroundColor: '#f0fdf4',
     flexGrow: 1,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f7fb',
+    backgroundColor: '#f0fdf4',
+  },
+  header: {
+    marginBottom: 24,
   },
   title: {
-    fontSize: 26,
+    fontSize: 16,
+    color: '#4b5563',
+  },
+  name: {
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 5,
-    color: '#000',
+    color: '#14532d',
+    marginBottom: 4,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 20,
+    fontSize: 14,
+    color: '#6b7280',
   },
   infoCard: {
-    backgroundColor: '#e0e7ff',
-    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#dcfce7',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: 12,
-    marginBottom: 20,
-    borderLeftWidth: 4,
-    borderLeftColor: '#4f46e5',
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
   },
   infoText: {
     fontSize: 14,
-    color: '#334155',
-    marginBottom: 5,
+    color: '#166534',
+    marginLeft: 6,
+    marginRight: 12,
   },
-  card: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 15,
-    elevation: 3,
-    shadowColor: '#000',
+  phoneIcon: {
+    marginLeft: 8,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  gridCard: {
+    width: '48%',
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    alignItems: 'center',
+    shadowColor: '#14532d',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 4,
+    elevation: 2,
   },
-  emergencyCard: {
-    borderColor: '#ef4444',
-    borderWidth: 1,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 5,
-    color: '#000',
-  },
-  cardText: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 10,
-  },
-  button: {
-    backgroundColor: '#4f46e5',
-    paddingVertical: 10,
-    borderRadius: 8,
+  iconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 12,
   },
-  emergencyButton: {
-    backgroundColor: '#ef4444',
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 15,
-  },
-  logoutBtn: {
-    marginTop: 30,
-    marginBottom: 20,
-    padding: 15,
-    backgroundColor: '#fee2e2',
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  logoutText: {
-    color: '#e11d48',
+  gridTitle: {
     fontSize: 16,
     fontWeight: '600',
+    color: '#14532d',
+    textAlign: 'center',
   },
-  doctorRegistrationCard: {
-    backgroundColor: '#e0f2fe',
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 15,
-    borderLeftWidth: 4,
-    borderLeftColor: '#0ea5e9',
+  gridSubtitle: {
+    fontSize: 12,
+    color: '#6b7280',
+    textAlign: 'center',
+    marginTop: 2,
   },
-  doctorRegistrationTitle: {
+  emergencyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ef4444',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#ef4444',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  emergencyIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  emergencyTextContainer: {
+    flex: 1,
+  },
+  emergencyTitle: {
     fontSize: 18,
     fontWeight: '600',
-    marginBottom: 8,
-    color: '#0369a1',
-  },
-  doctorRegistrationText: {
-    fontSize: 14,
-    color: '#0c4a6e',
-    marginBottom: 15,
-  },
-  doctorRegistrationButton: {
-    backgroundColor: '#0ea5e9',
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  doctorRegistrationButtonText: {
     color: '#fff',
+  },
+  emergencySubtitle: {
+    fontSize: 12,
+    color: '#fff',
+    opacity: 0.9,
+    marginTop: 2,
+  },
+  doctorCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+  },
+  doctorIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#ecfdf5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  doctorTextContainer: {
+    flex: 1,
+  },
+  doctorTitle: {
+    fontSize: 16,
     fontWeight: '600',
-    fontSize: 15,
+    color: '#14532d',
+  },
+  doctorSubtitle: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fef2f2',
+    paddingVertical: 14,
+    borderRadius: 30,
+    marginTop: 8,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#fee2e2',
+  },
+  logoutText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#dc2626',
+    marginLeft: 8,
   },
 });

@@ -73,8 +73,7 @@ class MedicalDocumentSerializer(serializers.ModelSerializer):
             'id', 'patient', 'patient_name', 'uploaded_by', 'uploaded_by_name',
             'title', 'category', 'category_display', 'file', 'file_url',
             'file_size', 'file_type', 'file_extension',
-            'description', 'document_date',
-            'is_shared_with_doctor', 'shared_with_doctors', 'shared_doctors',
+            'description', 'document_date', 'shared_with_doctors', 'shared_doctors',
             'shares', 'access_logs',
             'created_at', 'updated_at'
         ]

@@ -10,12 +10,12 @@ import {
   RegistrationResponse,
   Appointment,
   Medication,
-  Document 
+  Document,
 } from './types';
 
 
-const BASE_URL = 'http://192.168.100.9:8000/api';
-
+ const BASE_URL = 'http://192.168.100.9:8000/api';
+//  const BASE_URL = 'http://192.168.10.175:8000/api';
 
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -32,14 +32,13 @@ const api: AxiosInstance = axios.create({
 api.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem('access_token');
+    console.log('Interceptor - token present:', !!token);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 
@@ -89,17 +88,16 @@ export const authAPI = {
 
   // Login (returns LoginResponse)
   login: async (email: string, password: string): Promise<LoginResponse> => {
-    const response = await api.post('/users/login/', { email, password });
-    
-    // Save tokens and user data
-    if (response.data.access && response.data.refresh && response.data.user) {
-      await AsyncStorage.setItem('access_token', response.data.access);
-      await AsyncStorage.setItem('refresh_token', response.data.refresh);
-      await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
-    }
-    
-    return response.data;
-  },
+  const response = await api.post('/users/login/', { email, password });
+  
+  if (response.data.access && response.data.refresh && response.data.user) {
+    await AsyncStorage.setItem('access_token', response.data.access);
+    await AsyncStorage.setItem('refresh_token', response.data.refresh);
+    await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+  }
+  
+  return response.data;
+},
 
   // Logout
   logout: async (refreshToken: string): Promise<{message: string}> => {
@@ -194,16 +192,18 @@ export const doctorsAPI = {
   },
 
   // Add availability schedule
-  addAvailability: async (availabilityData: {
-    day_of_week: string;
-    start_time: string;
-    end_time: string;
-    is_available: boolean;
-  }): Promise<any> => {
-    const response = await api.post('/doctors/availability/add/', availabilityData);
-    return response.data;
-  },
+  // In api.ts, inside doctorsAPI object:
 
+addAvailability: async (data: {
+  day_of_week: number;        // integer 0-6
+  start_time: string;         // "HH:MM"
+  end_time: string;           // "HH:MM"
+  slot_duration: number;      // minutes
+  is_active: boolean;         // active status
+}): Promise<any> => {
+  const response = await api.post('/doctors/availability/add/', data);
+  return response.data;
+},
   // Get doctor availability
   getAvailability: async (doctorId: number): Promise<any[]> => {
     const response = await api.get(`/doctors/${doctorId}/availability/`);
@@ -296,13 +296,26 @@ export const appointmentsAPI = {
   },
 
   // Get available slots
-  getAvailableSlots: async (doctorId: number, date: string): Promise<string[]> => {
-    const response = await api.get(
-      `/appointments/available-slots/${doctorId}/`,
-      { params: { date } }
-    );
+  // In appointmentsAPI (api.ts)
+getAvailableSlots: async (doctorId: number, date: string): Promise<string[]> => {
+  const response = await api.get(
+    `/appointments/available-slots/${doctorId}/`,
+    { params: { date } }
+  );
+  console.log('Available slots raw response:', response.data); // Debug log
+
+  // If response.data is an object with a 'slots' array, return that
+  if (response.data && typeof response.data === 'object' && Array.isArray(response.data.slots)) {
+    return response.data.slots;
+  }
+  // If it's already an array, return it directly
+  if (Array.isArray(response.data)) {
     return response.data;
-  },
+  }
+  // Fallback: log warning and return empty array
+  console.warn('Unexpected available slots response:', response.data);
+  return [];
+},
 };
 
 // ============================================
@@ -412,7 +425,7 @@ export const medicationsAPI = {
     end_date?: string;
     duration_days?: number;
     instructions?: string;
-  }): Promise<Medication> => {
+  }): Promise<{ message: string; medication: Medication }> => {
     const response = await api.post('/medications/create/', medicationData);
     return response.data;
   },

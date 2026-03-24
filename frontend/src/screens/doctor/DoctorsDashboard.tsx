@@ -1,4 +1,3 @@
-// src/screens/doctor/DoctorDashboard.tsx
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
@@ -16,31 +15,52 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Calendar } from 'react-native-calendars';
 import { format, isToday, parseISO } from 'date-fns';
-import { appointmentsAPI, doctorsAPI, patientsAPI } from '../../services/api';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { appointmentsAPI, doctorsAPI } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
-// Types
+// ==================== Root Stack Param List ====================
+type RootStackParamList = {
+  Login: undefined;
+  Register: undefined;
+  PatientHome: undefined;
+  Medications: undefined;
+  AddMedication: { medicationId?: number };
+  MedicationDetail: { medicationId: number };
+  TodayDoses: undefined;
+  RequestRefill: { medicationId: number; medicationName: string };
+  BookAppointment: undefined;
+  UploadDocument: undefined;
+  DoctorsDashboard: undefined;
+  AppointmentDetails: { appointmentId: number };
+  PatientDetails: { patientId: string }; // Note: we use patient name as id temporarily
+  SetAvailability: undefined;
+  AppointmentsCalendar: { date?: string };
+  DoctorProfile: undefined;
+};
+
+type DoctorDashboardNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+// ==================== Interfaces ====================
 interface Appointment {
   id: number;
-  patient: {
-    id: number;
-    first_name: string;
-    last_name: string;
-    profile_picture?: string;
-  };
+  patient_name: string;          // flattened patient name
+  doctor_name: string;
+  doctor_specialization: string;
   appointment_date: string;
   appointment_time: string;
-  status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
+  duration_minutes: number;
+  status: string;                // e.g., 'PENDING'
+  status_display: string;
+  is_upcoming: boolean;
   reason: string;
 }
 
 interface Patient {
-  id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone_number?: string;
-  profile_picture?: string;
-  last_appointment?: string;
+  id: string;   // temporary: use patient name as id
+  name: string;
+  last_appointment: string;
 }
 
 interface DashboardStats {
@@ -59,7 +79,9 @@ interface MarkedDates {
   };
 }
 
-export default function DoctorDashboard({ navigation }: any) {
+export default function DoctorDashboard() {
+  const navigation = useNavigation<DoctorDashboardNavigationProp>();
+  const { signOut } = useAuth();
   const [doctor, setDoctor] = useState<any>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -75,7 +97,6 @@ export default function DoctorDashboard({ navigation }: any) {
   const [loggingOut, setLoggingOut] = useState(false);
   const [activeTab, setActiveTab] = useState<'appointments' | 'patients'>('appointments');
 
-  // Load user data from storage
   const loadUser = async () => {
     try {
       const userStr = await AsyncStorage.getItem('user');
@@ -88,29 +109,54 @@ export default function DoctorDashboard({ navigation }: any) {
     }
   };
 
-  // Helper to extract array from different API response shapes
   const extractArray = (data: any): any[] => {
     if (Array.isArray(data)) return data;
     if (data?.results && Array.isArray(data.results)) return data.results;
     if (data?.data && Array.isArray(data.data)) return data.data;
+    if (data?.appointments && Array.isArray(data.appointments)) return data.appointments;
     console.warn('Unexpected list response format:', data);
     return [];
   };
 
-  // Fetch dashboard data
   const fetchDashboardData = async () => {
     try {
-      const [appointmentsResult, patientsResult, profileResult] = await Promise.allSettled([
+      const [appointmentsResult, profileResult] = await Promise.allSettled([
         appointmentsAPI.getDoctorAppointments(),
-        patientsAPI.getMyPatients(),
         doctorsAPI.getMyProfile(),
       ]);
 
-      // Process appointments
+      console.log('=== DoctorDashboard Debug ===');
+
       if (appointmentsResult.status === 'fulfilled') {
         const appointmentsData = appointmentsResult.value;
-        const appointmentsArray = extractArray(appointmentsData);
+        console.log('Raw appointments response:', JSON.stringify(appointmentsData, null, 2));
+
+        const appointmentsArray = extractArray(appointmentsData) as Appointment[];
+        console.log('Extracted appointments array:', JSON.stringify(appointmentsArray, null, 2));
         setAppointments(appointmentsArray);
+
+        // Build a unique patient list from appointment patient names
+        const patientMap = new Map<string, { name: string; last_appointment: string }>();
+        appointmentsArray.forEach((apt: Appointment) => {
+          const name = apt.patient_name;
+          if (!patientMap.has(name)) {
+            patientMap.set(name, {
+              name,
+              last_appointment: apt.appointment_date,
+            });
+          } else {
+            const existing = patientMap.get(name)!;
+            if (apt.appointment_date > existing.last_appointment) {
+              existing.last_appointment = apt.appointment_date;
+            }
+          }
+        });
+        const patientsList = Array.from(patientMap.entries()).map(([key, value]) => ({
+          id: key, // temporary: use name as id
+          ...value,
+        }));
+        setPatients(patientsList);
+        setStats(prev => ({ ...prev, totalPatients: patientsList.length }));
 
         // Build marked dates for calendar
         const marks: MarkedDates = {};
@@ -119,22 +165,21 @@ export default function DoctorDashboard({ navigation }: any) {
           if (!marks[dateStr]) {
             marks[dateStr] = {
               marked: true,
-              dotColor: apt.status === 'CANCELLED' ? '#F44336' : '#007AFF',
+              dotColor: apt.status === 'CANCELLED' ? '#ef4444' : '#16a34a',
             };
           }
         });
         setMarkedDates(marks);
 
-        // Compute stats
         const today = new Date().toISOString().split('T')[0];
         const todayApps = appointmentsArray.filter(
-          (apt: Appointment) => apt.appointment_date === today && apt.status !== 'CANCELLED'
+          (apt) => apt.appointment_date === today && apt.status !== 'CANCELLED'
         ).length;
         const pendingApps = appointmentsArray.filter(
-          (apt: Appointment) => apt.status === 'PENDING'
+          (apt) => apt.status === 'PENDING'
         ).length;
         const completedApps = appointmentsArray.filter(
-          (apt: Appointment) => apt.status === 'COMPLETED'
+          (apt) => apt.status === 'COMPLETED'
         ).length;
 
         setStats(prev => ({
@@ -144,23 +189,16 @@ export default function DoctorDashboard({ navigation }: any) {
           completedAppointments: completedApps,
         }));
       } else {
-        console.warn('Failed to fetch appointments:', appointmentsResult.reason);
+        console.log('Appointments fetch failed:', appointmentsResult.reason);
       }
 
-      // Process patients
-      if (patientsResult.status === 'fulfilled') {
-        const patientsData = patientsResult.value;
-        const patientsArray = extractArray(patientsData);
-        setPatients(patientsArray);
-        setStats(prev => ({ ...prev, totalPatients: patientsArray.length }));
-      } else {
-        console.warn('Failed to fetch patients:', patientsResult.reason);
-      }
-
-      // Process profile (optional)
       if (profileResult.status === 'fulfilled') {
-        console.log('Profile fetched:', profileResult.value);
+        console.log('Doctor profile fetched:', profileResult.value);
+      } else {
+        console.log('Profile fetch failed:', profileResult.reason);
       }
+
+      console.log('============================');
     } catch (error) {
       console.error('Unexpected error in fetchDashboardData:', error);
       Alert.alert('Error', 'Failed to load dashboard. Please pull to refresh.');
@@ -191,16 +229,8 @@ export default function DoctorDashboard({ navigation }: any) {
         style: 'destructive',
         onPress: async () => {
           setLoggingOut(true);
-          try {
-            // Optional: call backend logout endpoint
-            // await authAPI.logout(refreshToken);
-            await AsyncStorage.multiRemove(['access_token', 'refresh_token', 'user', 'user_role']);
-          } catch (error) {
-            console.error('Logout error:', error);
-          } finally {
-            setLoggingOut(false);
-            navigation.replace('Login');
-          }
+          await signOut();
+          setLoggingOut(false);
         },
       },
     ]);
@@ -236,15 +266,13 @@ export default function DoctorDashboard({ navigation }: any) {
           {isTodayApp && <View style={styles.todayBadge}><Text style={styles.todayBadgeText}>Today</Text></View>}
         </View>
         <View style={styles.appointmentInfo}>
-          <Text style={styles.patientName}>
-            {item.patient.first_name} {item.patient.last_name}
-          </Text>
+          <Text style={styles.patientName}>{item.patient_name}</Text>
           <Text style={styles.reason} numberOfLines={1}>{item.reason}</Text>
           <View style={[styles.statusBadge, getStatusStyle(item.status)]}>
-            <Text style={styles.statusText}>{item.status}</Text>
+            <Text style={styles.statusText}>{item.status_display}</Text>
           </View>
         </View>
-        <Icon name="chevron-forward" size={20} color="#999" />
+        <Icon name="chevron-forward" size={20} color="#9ca3af" />
       </TouchableOpacity>
     );
   };
@@ -255,25 +283,15 @@ export default function DoctorDashboard({ navigation }: any) {
       onPress={() => navigation.navigate('PatientDetails', { patientId: item.id })}
     >
       <View style={styles.patientAvatar}>
-        {item.profile_picture ? (
-          <Image source={{ uri: item.profile_picture }} style={styles.avatarImage} />
-        ) : (
-          <Icon name="person-circle" size={50} color="#ccc" />
-        )}
+        <Icon name="person-circle" size={50} color="#bbf7d0" />
       </View>
       <View style={styles.patientInfo}>
-        <Text style={styles.patientName}>
-          {item.first_name} {item.last_name}
+        <Text style={styles.patientName}>{item.name}</Text>
+        <Text style={styles.lastAppointment}>
+          Last visit: {format(parseISO(item.last_appointment), 'MMM dd, yyyy')}
         </Text>
-        {item.last_appointment ? (
-          <Text style={styles.lastAppointment}>
-            Last visit: {format(parseISO(item.last_appointment), 'MMM dd, yyyy')}
-          </Text>
-        ) : (
-          <Text style={styles.lastAppointment}>New patient</Text>
-        )}
       </View>
-      <Icon name="chevron-forward" size={20} color="#999" />
+      <Icon name="chevron-forward" size={20} color="#9ca3af" />
     </TouchableOpacity>
   );
 
@@ -301,14 +319,13 @@ export default function DoctorDashboard({ navigation }: any) {
   if (loading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#16a34a" />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View style={styles.headerLeft}>
@@ -320,7 +337,7 @@ export default function DoctorDashboard({ navigation }: any) {
               style={styles.iconButton}
               onPress={() => navigation.navigate('DoctorProfile')}
             >
-              <Icon name="person-circle-outline" size={28} color="#007AFF" />
+              <Icon name="person-circle-outline" size={28} color="#16a34a" />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.iconButton}
@@ -328,9 +345,9 @@ export default function DoctorDashboard({ navigation }: any) {
               disabled={loggingOut}
             >
               {loggingOut ? (
-                <ActivityIndicator size="small" color="#FF3B30" />
+                <ActivityIndicator size="small" color="#ef4444" />
               ) : (
-                <Icon name="log-out-outline" size={28} color="#FF3B30" />
+                <Icon name="log-out-outline" size={28} color="#ef4444" />
               )}
             </TouchableOpacity>
           </View>
@@ -341,10 +358,8 @@ export default function DoctorDashboard({ navigation }: any) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
       >
-        {/* Stats */}
         {renderStats()}
 
-        {/* Mini Calendar */}
         <View style={styles.calendarSection}>
           <Text style={styles.sectionTitle}>Appointment Calendar</Text>
           <Calendar
@@ -353,10 +368,10 @@ export default function DoctorDashboard({ navigation }: any) {
             }}
             markedDates={markedDates}
             theme={{
-              selectedDayBackgroundColor: '#007AFF',
-              todayTextColor: '#007AFF',
-              arrowColor: '#007AFF',
-              monthTextColor: '#333',
+              selectedDayBackgroundColor: '#16a34a',
+              todayTextColor: '#16a34a',
+              arrowColor: '#16a34a',
+              monthTextColor: '#14532d',
               textMonthFontWeight: '600',
               textDayHeaderFontWeight: '500',
             }}
@@ -364,7 +379,6 @@ export default function DoctorDashboard({ navigation }: any) {
           />
         </View>
 
-        {/* Tabs */}
         <View style={styles.tabContainer}>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'appointments' && styles.activeTab]}
@@ -384,12 +398,11 @@ export default function DoctorDashboard({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        {/* Content */}
         {activeTab === 'appointments' ? (
           <>
             {appointments.length === 0 ? (
               <View style={styles.emptyContainer}>
-                <Icon name="calendar-outline" size={60} color="#ccc" />
+                <Icon name="calendar-outline" size={60} color="#bbf7d0" />
                 <Text style={styles.emptyText}>No appointments yet</Text>
                 <Text style={styles.emptySubtext}>Check back later</Text>
               </View>
@@ -407,14 +420,14 @@ export default function DoctorDashboard({ navigation }: any) {
           <>
             {patients.length === 0 ? (
               <View style={styles.emptyContainer}>
-                <Icon name="people-outline" size={60} color="#ccc" />
+                <Icon name="people-outline" size={60} color="#bbf7d0" />
                 <Text style={styles.emptyText}>No patients yet</Text>
                 <Text style={styles.emptySubtext}>Patients you consult will appear here</Text>
               </View>
             ) : (
               <FlatList
                 data={patients}
-                keyExtractor={(item) => item.id.toString()}
+                keyExtractor={(item) => item.id}
                 renderItem={renderPatientItem}
                 scrollEnabled={false}
                 contentContainerStyle={styles.listContent}
@@ -423,21 +436,20 @@ export default function DoctorDashboard({ navigation }: any) {
           </>
         )}
 
-        {/* Quick Actions */}
         <View style={styles.quickActions}>
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => navigation.navigate('SetAvailability')}
           >
-            <Icon name="time-outline" size={22} color="#007AFF" />
+            <Icon name="time-outline" size={22} color="#16a34a" />
             <Text style={styles.actionText}>Set Availability</Text>
           </TouchableOpacity>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.actionButton}
             onPress={() => navigation.navigate('AppointmentsCalendar')}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="calendar-outline" size={22} color="#007AFF" />
+              <Icon name="calendar-outline" size={22} color="#16a34a" />
               <Text style={styles.actionText}>Calendar</Text>
               {stats.todayAppointments > 0 && (
                 <View style={styles.badge}>
@@ -445,54 +457,34 @@ export default function DoctorDashboard({ navigation }: any) {
                 </View>
               )}
             </View>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </ScrollView>
     </View>
   );
 }
 
+// ==================== Styles ====================
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  container: { flex: 1, backgroundColor: '#f0fdf4' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: {
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     padding: 20,
     paddingTop: 60,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#bbf7d0',
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  headerLeft: {
-    flex: 1,
-  },
-  headerRight: {
-    flexDirection: 'row',
-  },
-  iconButton: {
-    marginLeft: 15,
-  },
-  greeting: {
-    fontSize: 14,
-    color: '#666',
-  },
-  doctorName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 4,
-  },
+  headerLeft: { flex: 1 },
+  headerRight: { flexDirection: 'row' },
+  iconButton: { marginLeft: 15 },
+  greeting: { fontSize: 14, color: '#4b5563' },
+  doctorName: { fontSize: 24, fontWeight: 'bold', color: '#14532d', marginTop: 4 },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -504,45 +496,27 @@ const styles = StyleSheet.create({
   statCard: {
     width: '22%',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#dcfce7',
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 8,
   },
-  statNumber: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#007AFF',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 5,
-    textAlign: 'center',
-  },
+  statNumber: { fontSize: 22, fontWeight: 'bold', color: '#16a34a' },
+  statLabel: { fontSize: 12, color: '#4b5563', marginTop: 5, textAlign: 'center' },
   calendarSection: {
     backgroundColor: '#fff',
     marginHorizontal: 20,
     marginBottom: 10,
     borderRadius: 12,
     padding: 10,
-    shadowColor: '#000',
+    shadowColor: '#14532d',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 10,
-    marginLeft: 5,
-    color: '#333',
-  },
-  calendar: {
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
+  sectionTitle: { fontSize: 18, fontWeight: '600', marginBottom: 10, marginLeft: 5, color: '#14532d' },
+  calendar: { borderRadius: 10, overflow: 'hidden' },
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: '#fff',
@@ -550,30 +524,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#bbf7d0',
   },
-  tab: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  activeTab: {
-    borderBottomColor: '#007AFF',
-  },
-  tabText: {
-    fontSize: 16,
-    color: '#666',
-  },
-  activeTabText: {
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-  listContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 10,
-  },
+  tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
+  activeTab: { borderBottomColor: '#16a34a' },
+  tabText: { fontSize: 16, color: '#4b5563' },
+  activeTabText: { color: '#16a34a', fontWeight: '600' },
+  listContent: { paddingHorizontal: 20, paddingBottom: 10 },
   appointmentCard: {
     flexDirection: 'row',
     backgroundColor: '#fff',
@@ -581,71 +538,25 @@ const styles = StyleSheet.create({
     padding: 15,
     marginBottom: 10,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: '#14532d',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 2,
   },
-  appointmentTimeContainer: {
-    width: 70,
-    marginRight: 15,
-  },
-  appointmentTime: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  todayBadge: {
-    backgroundColor: '#007AFF',
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginTop: 4,
-    alignSelf: 'flex-start',
-  },
-  todayBadgeText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  appointmentInfo: {
-    flex: 1,
-  },
-  patientName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
-  },
-  reason: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 6,
-  },
-  statusBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  status_pending: {
-    backgroundColor: '#FFD700',
-  },
-  status_confirmed: {
-    backgroundColor: '#4CAF50',
-  },
-  status_completed: {
-    backgroundColor: '#9E9E9E',
-  },
-  status_cancelled: {
-    backgroundColor: '#F44336',
-  },
-  statusText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
+  appointmentTimeContainer: { width: 70, marginRight: 15 },
+  appointmentTime: { fontSize: 16, fontWeight: '600', color: '#14532d' },
+  todayBadge: { backgroundColor: '#16a34a', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2, marginTop: 4, alignSelf: 'flex-start' },
+  todayBadgeText: { color: '#fff', fontSize: 10, fontWeight: '600' },
+  appointmentInfo: { flex: 1 },
+  patientName: { fontSize: 16, fontWeight: '600', color: '#14532d', marginBottom: 4 },
+  reason: { fontSize: 14, color: '#4b5563', marginBottom: 6 },
+  statusBadge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+  status_pending: { backgroundColor: '#fcd34d' },
+  status_confirmed: { backgroundColor: '#34d399' },
+  status_completed: { backgroundColor: '#9ca3af' },
+  status_cancelled: { backgroundColor: '#f87171' },
+  statusText: { color: '#fff', fontSize: 12, fontWeight: '600' },
   patientCard: {
     flexDirection: 'row',
     backgroundColor: '#fff',
@@ -654,38 +565,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     alignItems: 'center',
   },
-  patientAvatar: {
-    marginRight: 15,
-  },
-  avatarImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-  },
-  patientInfo: {
-    flex: 1,
-  },
-  lastAppointment: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 4,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: 40,
-    paddingHorizontal: 20,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#999',
-    marginTop: 15,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#bbb',
-    marginTop: 5,
-  },
+  patientAvatar: { marginRight: 15 },
+  patientInfo: { flex: 1 },
+  lastAppointment: { fontSize: 12, color: '#6b7280', marginTop: 4 },
+  emptyContainer: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 },
+  emptyText: { fontSize: 18, fontWeight: '600', color: '#9ca3af', marginTop: 15 },
+  emptySubtext: { fontSize: 14, color: '#9ca3af', marginTop: 5 },
   quickActions: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -700,28 +585,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 30,
-    shadowColor: '#000',
+    shadowColor: '#14532d',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  actionText: {
-    marginLeft: 8,
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#007AFF',
-  },
-  badge: {
-    backgroundColor: '#FF3B30',
-    borderRadius: 10,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginLeft: 8,
-  },
-  badgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
+  actionText: { marginLeft: 8, fontSize: 14, fontWeight: '500', color: '#16a34a' },
+  badge: { backgroundColor: '#ef4444', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2, marginLeft: 8 },
+  badgeText: { color: '#fff', fontSize: 12, fontWeight: '600' },
 });

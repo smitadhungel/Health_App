@@ -331,8 +331,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   roleActive: {
-    backgroundColor: '#4f46e5',
-    borderColor: '#4f46e5',
+    backgroundColor: '#16a34a',
+    borderColor: '#137737',
   },
   roleText: {
     color: '#666',
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
     borderColor: '#e0e0e0',
   },
   button: {
-    backgroundColor: '#4f46e5',
+    backgroundColor: '#16a34a',
     padding: 16,
     borderRadius: 10,
     alignItems: 'center',
@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   linkBold: {
-    color: '#4f46e5',
+    color: '#16a34a',
     fontWeight: '600',
   },
 });

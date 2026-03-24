@@ -8,6 +8,48 @@ from doctor.models import DoctorProfile
 from datetime import datetime, date, time, timedelta
 
 
+class AppointmentCreateSerializer(serializers.ModelSerializer):
+    document_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        write_only=True,
+        required=False
+    )
+
+    class Meta:
+        model = Appointment
+        fields = ['doctor', 'date', 'time', 'notes', 'document_ids']  # add other fields
+
+    def create(self, validated_data):
+        document_ids = validated_data.pop('document_ids', [])
+        appointment = Appointment.objects.create(**validated_data)
+
+        # Link each document to the appointment and share with the doctor
+        for doc_id in document_ids:
+            try:
+                # Ensure the document belongs to the current patient
+                document = MedicalDocument.objects.get(
+                    id=doc_id,
+                    patient=self.context['request'].user
+                )
+            except MedicalDocument.DoesNotExist:
+                raise serializers.ValidationError(
+                    f"Document with id {doc_id} does not exist or does not belong to you."
+                )
+
+            # Create the link
+            AppointmentDocument.objects.create(
+                appointment=appointment,
+                document=document,
+                expires_at=appointment.date + timedelta(days=1)  # example: expire 1 day after appointment
+            )
+
+            # Also share the document with the doctor (optional, if you want permanent access)
+            if appointment.doctor:
+                document.shared_with_doctors.add(appointment.doctor)
+
+        return appointment
+
+
 class DoctorBasicSerializer(serializers.ModelSerializer):
     """Basic doctor info for appointments"""
     doctor_name = serializers.CharField(source='user.get_full_name', read_only=True)

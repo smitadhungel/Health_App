@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { appointmentsAPI, medicationsAPI } from '../../services/api';
 
 
+
 export default function HomeScreen({ navigation }: any) {
   const [user, setUser] = useState<any>(null);
   const [stats, setStats] = useState<any>(null);
