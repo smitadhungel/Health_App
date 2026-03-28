@@ -20,7 +20,6 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { appointmentsAPI, doctorsAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
-// ==================== Root Stack Param List ====================
 type RootStackParamList = {
   Login: undefined;
   Register: undefined;
@@ -34,31 +33,31 @@ type RootStackParamList = {
   UploadDocument: undefined;
   DoctorsDashboard: undefined;
   AppointmentDetails: { appointmentId: number };
-  PatientDetails: { patientId: string }; // Note: we use patient name as id temporarily
+  PatientDetails: { patientId: string };
   SetAvailability: undefined;
   AppointmentsCalendar: { date?: string };
   DoctorProfile: undefined;
+  DoctorDetails: undefined;            // Added for redirect
 };
 
 type DoctorDashboardNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-// ==================== Interfaces ====================
 interface Appointment {
   id: number;
-  patient_name: string;          // flattened patient name
+  patient_name: string;
   doctor_name: string;
   doctor_specialization: string;
   appointment_date: string;
   appointment_time: string;
   duration_minutes: number;
-  status: string;                // e.g., 'PENDING'
+  status: string;
   status_display: string;
   is_upcoming: boolean;
   reason: string;
 }
 
 interface Patient {
-  id: string;   // temporary: use patient name as id
+  id: string;
   name: string;
   last_appointment: string;
 }
@@ -82,6 +81,11 @@ interface MarkedDates {
 export default function DoctorDashboard() {
   const navigation = useNavigation<DoctorDashboardNavigationProp>();
   const { signOut } = useAuth();
+
+  // Profile check state
+  const [isCheckingProfile, setIsCheckingProfile] = useState(true);
+
+  // Dashboard data state
   const [doctor, setDoctor] = useState<any>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -97,6 +101,31 @@ export default function DoctorDashboard() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [activeTab, setActiveTab] = useState<'appointments' | 'patients'>('appointments');
 
+  // 1. Check if doctor profile exists
+  useEffect(() => {
+    const checkProfile = async () => {
+      try {
+        await doctorsAPI.getMyProfile();
+        // Profile exists → proceed to load dashboard data
+        loadUser();
+        fetchDashboardData();
+      } catch (error: any) {
+        if (error.response?.status === 404) {
+          // Profile not found → redirect to completion screen
+          navigation.replace('DoctorDetails');
+        } else {
+          // Other error – still redirect for safety
+          console.error('Error checking profile:', error);
+          navigation.replace('DoctorDetails');
+        }
+      } finally {
+        setIsCheckingProfile(false);
+      }
+    };
+    checkProfile();
+  }, []);
+
+  // 2. Load user data from AsyncStorage (used by the UI)
   const loadUser = async () => {
     try {
       const userStr = await AsyncStorage.getItem('user');
@@ -122,28 +151,22 @@ export default function DoctorDashboard() {
     try {
       const [appointmentsResult, profileResult] = await Promise.allSettled([
         appointmentsAPI.getDoctorAppointments(),
-        doctorsAPI.getMyProfile(),
+        doctorsAPI.getMyProfile(), // profile already exists, but we call again to get fresh data
       ]);
 
       console.log('=== DoctorDashboard Debug ===');
 
       if (appointmentsResult.status === 'fulfilled') {
         const appointmentsData = appointmentsResult.value;
-        console.log('Raw appointments response:', JSON.stringify(appointmentsData, null, 2));
-
         const appointmentsArray = extractArray(appointmentsData) as Appointment[];
-        console.log('Extracted appointments array:', JSON.stringify(appointmentsArray, null, 2));
         setAppointments(appointmentsArray);
 
-        // Build a unique patient list from appointment patient names
+        // Build patient list from appointments
         const patientMap = new Map<string, { name: string; last_appointment: string }>();
-        appointmentsArray.forEach((apt: Appointment) => {
+        appointmentsArray.forEach((apt) => {
           const name = apt.patient_name;
           if (!patientMap.has(name)) {
-            patientMap.set(name, {
-              name,
-              last_appointment: apt.appointment_date,
-            });
+            patientMap.set(name, { name, last_appointment: apt.appointment_date });
           } else {
             const existing = patientMap.get(name)!;
             if (apt.appointment_date > existing.last_appointment) {
@@ -152,15 +175,15 @@ export default function DoctorDashboard() {
           }
         });
         const patientsList = Array.from(patientMap.entries()).map(([key, value]) => ({
-          id: key, // temporary: use name as id
+          id: key,
           ...value,
         }));
         setPatients(patientsList);
-        setStats(prev => ({ ...prev, totalPatients: patientsList.length }));
+        setStats((prev) => ({ ...prev, totalPatients: patientsList.length }));
 
-        // Build marked dates for calendar
+        // Marked dates
         const marks: MarkedDates = {};
-        appointmentsArray.forEach((apt: Appointment) => {
+        appointmentsArray.forEach((apt) => {
           const dateStr = apt.appointment_date;
           if (!marks[dateStr]) {
             marks[dateStr] = {
@@ -175,14 +198,10 @@ export default function DoctorDashboard() {
         const todayApps = appointmentsArray.filter(
           (apt) => apt.appointment_date === today && apt.status !== 'CANCELLED'
         ).length;
-        const pendingApps = appointmentsArray.filter(
-          (apt) => apt.status === 'PENDING'
-        ).length;
-        const completedApps = appointmentsArray.filter(
-          (apt) => apt.status === 'COMPLETED'
-        ).length;
+        const pendingApps = appointmentsArray.filter((apt) => apt.status === 'PENDING').length;
+        const completedApps = appointmentsArray.filter((apt) => apt.status === 'COMPLETED').length;
 
-        setStats(prev => ({
+        setStats((prev) => ({
           ...prev,
           todayAppointments: todayApps,
           pendingAppointments: pendingApps,
@@ -197,8 +216,6 @@ export default function DoctorDashboard() {
       } else {
         console.log('Profile fetch failed:', profileResult.reason);
       }
-
-      console.log('============================');
     } catch (error) {
       console.error('Unexpected error in fetchDashboardData:', error);
       Alert.alert('Error', 'Failed to load dashboard. Please pull to refresh.');
@@ -207,14 +224,6 @@ export default function DoctorDashboard() {
       setRefreshing(false);
     }
   };
-
-  useEffect(() => {
-    const init = async () => {
-      await loadUser();
-      await fetchDashboardData();
-    };
-    init();
-  }, []);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -316,7 +325,7 @@ export default function DoctorDashboard() {
     </View>
   );
 
-  if (loading && !refreshing) {
+  if (isCheckingProfile || (loading && !refreshing)) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#16a34a" />
@@ -399,41 +408,35 @@ export default function DoctorDashboard() {
         </View>
 
         {activeTab === 'appointments' ? (
-          <>
-            {appointments.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Icon name="calendar-outline" size={60} color="#bbf7d0" />
-                <Text style={styles.emptyText}>No appointments yet</Text>
-                <Text style={styles.emptySubtext}>Check back later</Text>
-              </View>
-            ) : (
-              <FlatList
-                data={appointments}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={renderAppointmentItem}
-                scrollEnabled={false}
-                contentContainerStyle={styles.listContent}
-              />
-            )}
-          </>
+          appointments.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Icon name="calendar-outline" size={60} color="#bbf7d0" />
+              <Text style={styles.emptyText}>No appointments yet</Text>
+              <Text style={styles.emptySubtext}>Check back later</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={appointments}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={renderAppointmentItem}
+              scrollEnabled={false}
+              contentContainerStyle={styles.listContent}
+            />
+          )
+        ) : patients.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Icon name="people-outline" size={60} color="#bbf7d0" />
+            <Text style={styles.emptyText}>No patients yet</Text>
+            <Text style={styles.emptySubtext}>Patients you consult will appear here</Text>
+          </View>
         ) : (
-          <>
-            {patients.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Icon name="people-outline" size={60} color="#bbf7d0" />
-                <Text style={styles.emptyText}>No patients yet</Text>
-                <Text style={styles.emptySubtext}>Patients you consult will appear here</Text>
-              </View>
-            ) : (
-              <FlatList
-                data={patients}
-                keyExtractor={(item) => item.id}
-                renderItem={renderPatientItem}
-                scrollEnabled={false}
-                contentContainerStyle={styles.listContent}
-              />
-            )}
-          </>
+          <FlatList
+            data={patients}
+            keyExtractor={(item) => item.id}
+            renderItem={renderPatientItem}
+            scrollEnabled={false}
+            contentContainerStyle={styles.listContent}
+          />
         )}
 
         <View style={styles.quickActions}>
@@ -444,27 +447,14 @@ export default function DoctorDashboard() {
             <Icon name="time-outline" size={22} color="#16a34a" />
             <Text style={styles.actionText}>Set Availability</Text>
           </TouchableOpacity>
-          {/* <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('AppointmentsCalendar')}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="calendar-outline" size={22} color="#16a34a" />
-              <Text style={styles.actionText}>Calendar</Text>
-              {stats.todayAppointments > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{stats.todayAppointments}</Text>
-                </View>
-              )}
-            </View>
-          </TouchableOpacity> */}
+          {/* Calendar button commented out */}
         </View>
       </ScrollView>
     </View>
   );
 }
 
-// ==================== Styles ====================
+// Styles remain unchanged – keep them as in your original file
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f0fdf4' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },

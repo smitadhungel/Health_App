@@ -11,11 +11,11 @@ class NearbyPlacesView(APIView):
     def get(self, request):
         lat = request.query_params.get('lat')
         lng = request.query_params.get('lng')
-        radius = request.query_params.get('radius', 2000)  # meters
-        place_type = request.query_params.get('type', 'hospital')  # or 'pharmacy'
+        radius = request.query_params.get('radius', 5000)
+        place_type = request.query_params.get('type', 'hospital')
 
         if not lat or not lng:
-            return Response({'error': 'Latitude and longitude are required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Latitude and longitude required'}, status=status.HTTP_400_BAD_REQUEST)
 
         url = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json'
         params = {
@@ -27,7 +27,6 @@ class NearbyPlacesView(APIView):
         try:
             response = requests.get(url, params=params)
             response.raise_for_status()
-            data = response.json()
-            return Response(data)
+            return Response(response.json())
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

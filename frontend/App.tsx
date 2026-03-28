@@ -5,10 +5,10 @@ import RootNavigator from './src/navigation/RootNavigator';
 
 export default function App() {
   return (
-    <AuthProvider>
-      <NavigationContainer>
+     <AuthProvider>
+        <NavigationContainer>
         <RootNavigator />
-      </NavigationContainer>
-    </AuthProvider>
+        </NavigationContainer>
+     </AuthProvider>
   );
 }

@@ -1,4 +1,3 @@
-// src/screens/doctor/DoctorDetails.tsx
 import React, { useState } from 'react';
 import {
   View,
@@ -40,7 +39,6 @@ export default function DoctorDetails({ navigation }: any) {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
-    // Validation
     if (!specialization) {
       Alert.alert('Error', 'Please select your specialization');
       return;
@@ -85,7 +83,7 @@ export default function DoctorDetails({ navigation }: any) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Complete Your Profile</Text>
         <Text style={styles.subtitle}>We need a few more details to set up your account</Text>
 
@@ -97,7 +95,7 @@ export default function DoctorDetails({ navigation }: any) {
               selectedValue={specialization}
               onValueChange={(itemValue) => setSpecialization(itemValue)}
               style={styles.picker}
-              dropdownIconColor="#007AFF"
+              dropdownIconColor="#16a34a"
             >
               <Picker.Item label="-- Select Specialization --" value="" />
               {SPECIALIZATIONS.map((spec) => (
@@ -113,6 +111,7 @@ export default function DoctorDetails({ navigation }: any) {
             value={licenseNumber}
             onChangeText={setLicenseNumber}
             placeholder="e.g., MED-12345"
+            placeholderTextColor="#9ca3af"
             autoCapitalize="characters"
           />
 
@@ -123,6 +122,7 @@ export default function DoctorDetails({ navigation }: any) {
             value={qualification}
             onChangeText={setQualification}
             placeholder="e.g., MD, MBBS"
+            placeholderTextColor="#9ca3af"
           />
 
           {/* Years of Experience */}
@@ -133,6 +133,7 @@ export default function DoctorDetails({ navigation }: any) {
             onChangeText={setExperienceYears}
             keyboardType="numeric"
             placeholder="e.g., 10"
+            placeholderTextColor="#9ca3af"
           />
 
           {/* Consultation Fee */}
@@ -143,6 +144,7 @@ export default function DoctorDetails({ navigation }: any) {
             onChangeText={setConsultationFee}
             keyboardType="numeric"
             placeholder="e.g., 500"
+            placeholderTextColor="#9ca3af"
           />
 
           {/* Clinic Address */}
@@ -154,6 +156,8 @@ export default function DoctorDetails({ navigation }: any) {
             multiline
             numberOfLines={3}
             placeholder="Full clinic address"
+            placeholderTextColor="#9ca3af"
+            textAlignVertical="top"
           />
 
           {/* Bio */}
@@ -165,10 +169,12 @@ export default function DoctorDetails({ navigation }: any) {
             multiline
             numberOfLines={4}
             placeholder="Tell patients about yourself"
+            placeholderTextColor="#9ca3af"
+            textAlignVertical="top"
           />
 
           {/* Submit Button */}
-          <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
+          <TouchableOpacity style={[styles.button, loading && styles.disabledButton]} onPress={handleSubmit} disabled={loading}>
             {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Save & Continue</Text>}
           </TouchableOpacity>
         </View>
@@ -180,7 +186,7 @@ export default function DoctorDetails({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f0fdf4', // light green background
   },
   scrollContent: {
     padding: 20,
@@ -191,11 +197,11 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 8,
-    color: '#333',
+    color: '#14532d', // dark green
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: '#4b5563',
     marginBottom: 30,
   },
   form: {
@@ -204,45 +210,56 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
-    marginBottom: 5,
+    color: '#064e3b', // medium green
+    marginBottom: 6,
     marginTop: 15,
   },
   required: {
-    color: 'red',
+    color: '#ef4444',
   },
   input: {
-    backgroundColor: '#f5f5f5',
-    padding: 15,
-    borderRadius: 10,
-    fontSize: 16,
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#bbf7d0', // light green border
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#14532d',
   },
   textArea: {
     minHeight: 80,
     textAlignVertical: 'top',
+    paddingTop: 12,
   },
   pickerContainer: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#bbf7d0',
+    borderRadius: 12,
     overflow: 'hidden',
   },
   picker: {
     height: 50,
-    color: '#333',
+    color: '#14532d',
   },
   button: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#16a34a',
     padding: 16,
-    borderRadius: 10,
+    borderRadius: 30,
     alignItems: 'center',
     marginTop: 30,
+    shadowColor: '#16a34a',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  disabledButton: {
+    backgroundColor: '#bbf7d0',
   },
   buttonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
   },

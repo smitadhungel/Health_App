@@ -2,7 +2,8 @@ from django.db import models
 from django.conf import settings
 from doctor.models import DoctorProfile
 from appointments.models import Appointment
-
+from django.utils import timezone
+from datetime import datetime, timedelta
 
 class Medication(models.Model):
     """Medication prescribed to patients"""
@@ -173,11 +174,14 @@ class MedicationLog(models.Model):
     
     @property
     def is_late(self):
-        """Check if medication was taken late"""
         if self.status == 'TAKEN' and self.actual_time and self.scheduled_time:
-            from datetime import datetime, timedelta
             scheduled_datetime = datetime.combine(self.scheduled_date, self.scheduled_time)
-            return self.actual_time > (scheduled_datetime + timedelta(minutes=30))
+            # Ensure both datetimes are naive for comparison
+            if timezone.is_aware(self.actual_time):
+                actual = timezone.make_naive(self.actual_time)
+            else:
+                actual = self.actual_time
+            return actual > (scheduled_datetime + timedelta(minutes=30))
         return False
 
 

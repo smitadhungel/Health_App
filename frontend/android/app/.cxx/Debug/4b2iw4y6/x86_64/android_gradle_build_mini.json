@@ -2,10 +2,12 @@
   "buildFiles": [
     "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-async-storage/async-storage/android/build/generated/source/codegen/jni/CMakeLists.txt",
     "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-community/datetimepicker/android/build/generated/source/codegen/jni/CMakeLists.txt",
+    "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-community/geolocation/android/build/generated/source/codegen/jni/CMakeLists.txt",
     "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-picker/picker/android/src/main/jni/CMakeLists.txt",
     "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/CMakeLists.txt",
     "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-image-crop-picker/android/build/generated/source/codegen/jni/CMakeLists.txt",
     "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-image-picker/android/build/generated/source/codegen/jni/CMakeLists.txt",
+    "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/CMakeLists.txt",
     "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-reanimated/android/build/generated/source/codegen/jni/CMakeLists.txt",
     "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-safe-area-context/android/src/main/jni/CMakeLists.txt",
     "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-screens/android/src/main/jni/CMakeLists.txt",
@@ -43,6 +45,11 @@
         "/Users/roshan/.gradle/caches/9.0.0/transforms/f97a0c8835e876dfb08e8efd6d33fd2f/transformed/react-android-0.83.1-debug/prefab/modules/jsi/libs/android.x86_64/libjsi.so",
         "/Users/roshan/.gradle/caches/9.0.0/transforms/f97a0c8835e876dfb08e8efd6d33fd2f/transformed/react-android-0.83.1-debug/prefab/modules/reactnative/libs/android.x86_64/libreactnative.so"
       ]
+    },
+    "react_codegen_RNPermissionsSpec::@7ad697819b753921c957": {
+      "artifactName": "react_codegen_RNPermissionsSpec",
+      "abi": "x86_64",
+      "runtimeFiles": []
     },
     "react_codegen_RNCImageCropPickerSpec::@702b02f8d2524609d414": {
       "artifactName": "react_codegen_RNCImageCropPickerSpec",
@@ -90,6 +97,11 @@
     },
     "react_codegen_rnasyncstorage::@1596841e19ec5b9eeffe": {
       "artifactName": "react_codegen_rnasyncstorage",
+      "abi": "x86_64",
+      "runtimeFiles": []
+    },
+    "react_codegen_RNCGeolocationSpec::@1b959fcb56e23f7716ba": {
+      "artifactName": "react_codegen_RNCGeolocationSpec",
       "abi": "x86_64",
       "runtimeFiles": []
     },

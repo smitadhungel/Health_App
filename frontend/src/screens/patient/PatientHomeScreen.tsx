@@ -26,6 +26,7 @@ import {
   ArrowRight,
   LogOut,
   Stethoscope,
+  Hospital,
 } from 'lucide-react-native';
 
 type PatientHomeNavigationProp = NativeStackNavigationProp<PatientStackParamList, 'PatientHome'>;
@@ -138,13 +139,13 @@ export default function PatientHomeScreen() {
 
         <TouchableOpacity
           style={styles.gridCard}
-          onPress={() => navigation.navigate('MyAppointments')}
+          onPress={() => navigation.navigate('PlaceDetails')}
         >
           <View style={[styles.iconCircle, { backgroundColor: '#fef9c3' }]}>
-            <List size={28} color="#ca8a04" />
+            <Hospital size={28} color="#ca8a04" />
           </View>
-          <Text style={styles.gridTitle}>My</Text>
-          <Text style={styles.gridSubtitle}>Appointments</Text>
+          <Text style={styles.gridTitle}>Hospital</Text>
+          {/* <Text style={styles.gridSubtitle}></Text> */}
         </TouchableOpacity>
 
         <TouchableOpacity

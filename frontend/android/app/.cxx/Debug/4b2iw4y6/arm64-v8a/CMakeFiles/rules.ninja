@@ -61,6 +61,16 @@ rule CXX_COMPILER__react_codegen_RNDateTimePickerCGen_Debug
 #############################################
 # Rule for compiling CXX files.
 
+rule CXX_COMPILER__react_codegen_RNCGeolocationSpec_Debug
+  depfile = $DEP_FILE
+  deps = gcc
+  command = /Users/roshan/Library/Android/sdk/ndk/27.1.12297006/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android24 --sysroot=/Users/roshan/Library/Android/sdk/ndk/27.1.12297006/toolchains/llvm/prebuilt/darwin-x86_64/sysroot $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
+  description = Building CXX object $out
+
+
+#############################################
+# Rule for compiling CXX files.
+
 rule CXX_COMPILER__react_codegen_rnpicker_Debug
   depfile = $DEP_FILE
   deps = gcc
@@ -101,6 +111,16 @@ rule CXX_COMPILER__react_codegen_RNCImageCropPickerSpec_Debug
 # Rule for compiling CXX files.
 
 rule CXX_COMPILER__react_codegen_RNImagePickerSpec_Debug
+  depfile = $DEP_FILE
+  deps = gcc
+  command = /Users/roshan/Library/Android/sdk/ndk/27.1.12297006/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android24 --sysroot=/Users/roshan/Library/Android/sdk/ndk/27.1.12297006/toolchains/llvm/prebuilt/darwin-x86_64/sysroot $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
+  description = Building CXX object $out
+
+
+#############################################
+# Rule for compiling CXX files.
+
+rule CXX_COMPILER__react_codegen_RNPermissionsSpec_Debug
   depfile = $DEP_FILE
   deps = gcc
   command = /Users/roshan/Library/Android/sdk/ndk/27.1.12297006/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android24 --sysroot=/Users/roshan/Library/Android/sdk/ndk/27.1.12297006/toolchains/llvm/prebuilt/darwin-x86_64/sysroot $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in

@@ -11,10 +11,9 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authAPI } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
-// Define types for form data
 interface RegisterFormData {
   email: string;
   username: string;
@@ -26,21 +25,22 @@ interface RegisterFormData {
   role: 'PATIENT' | 'DOCTOR';
 }
 
-// Expected response from your backend after registration
 interface RegisterResponse {
   user?: {
     id: number;
     email: string;
     username: string;
     role: string;
-    // ... other fields
+    first_name?: string;
+    last_name?: string;
   };
-  access?: string;   // if auto-login is enabled
-  refresh?: string;  // if auto-login is enabled
-  message?: string;  // e.g., "Account created successfully"
+  access?: string;
+  refresh?: string;
+  message?: string;
 }
 
 export default function RegisterScreen({ navigation }: any) {
+  const { signIn } = useAuth();
   const [formData, setFormData] = useState<RegisterFormData>({
     email: '',
     username: '',
@@ -53,12 +53,10 @@ export default function RegisterScreen({ navigation }: any) {
   });
   const [loading, setLoading] = useState(false);
 
-  // Handle input changes
   const handleChange = (field: keyof RegisterFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // Validate form
   const validateForm = (): boolean => {
     const { email, username, password, password2, first_name, last_name } = formData;
 
@@ -86,34 +84,28 @@ export default function RegisterScreen({ navigation }: any) {
     return true;
   };
 
-  // Handle registration
   const handleRegister = async () => {
     if (!validateForm()) return;
 
     setLoading(true);
     try {
-      console.log('Registering with:', formData);
       const response = await authAPI.register(formData) as RegisterResponse;
       console.log('Registration response:', response);
 
-      // CASE 1: Backend returns tokens (auto‑login)
+      // If backend returns tokens, auto-login via auth context
       if (response?.access && response?.refresh) {
-        await AsyncStorage.setItem('access_token', response.access);
-        await AsyncStorage.setItem('refresh_token', response.refresh);
-
-        // Get user role from response or fallback to form role
-        const userRole = response.user?.role || formData.role;
-        await AsyncStorage.setItem('user_role', userRole);
-
-        // Navigate based on role
-       if (userRole === 'DOCTOR') {
-          navigation.replace('DoctorDetails');
+        // Build a user object from response (or use response.user if present)
+        const user = response.user || {
+          id: null,
+          email: formData.email,
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          role: formData.role,
+        };
+        await signIn(response.access, response.refresh, user);
+        // No navigation – root navigator will switch to the appropriate stack
       } else {
-          navigation.replace('PatientHome');
-}
-      }
-      // CASE 2: Only a success message (no tokens) – ask user to log in
-      else {
+        // No auto-login, ask user to log in manually
         Alert.alert(
           'Success',
           response.message || 'Account created successfully! Please log in.',
@@ -122,8 +114,6 @@ export default function RegisterScreen({ navigation }: any) {
       }
     } catch (error: any) {
       console.error('Registration error:', error);
-
-      // Extract error message from backend
       let errorMessage = 'Registration failed. Please try again.';
       if (error.response?.data) {
         const data = error.response.data;
@@ -142,13 +132,11 @@ export default function RegisterScreen({ navigation }: any) {
         } else if (data.message) {
           errorMessage = data.message;
         } else {
-          // Fallback: stringify the whole object for debugging
           errorMessage = JSON.stringify(data);
         }
       } else if (error.message) {
         errorMessage = error.message;
       }
-
       Alert.alert('Registration Failed', errorMessage);
     } finally {
       setLoading(false);
@@ -165,7 +153,6 @@ export default function RegisterScreen({ navigation }: any) {
           <Text style={styles.title}>Create Account</Text>
           <Text style={styles.subtitle}>Join us to manage your health</Text>
 
-          {/* Role Selection */}
           <View style={styles.roleContainer}>
             <TouchableOpacity
               style={[styles.roleButton, formData.role === 'PATIENT' && styles.roleActive]}
@@ -186,7 +173,6 @@ export default function RegisterScreen({ navigation }: any) {
           </View>
 
           <View style={styles.form}>
-            {/* First Name */}
             <TextInput
               style={styles.input}
               placeholder="First Name *"
@@ -194,8 +180,6 @@ export default function RegisterScreen({ navigation }: any) {
               onChangeText={(text) => handleChange('first_name', text)}
               placeholderTextColor="#999"
             />
-
-            {/* Last Name */}
             <TextInput
               style={styles.input}
               placeholder="Last Name *"
@@ -203,8 +187,6 @@ export default function RegisterScreen({ navigation }: any) {
               onChangeText={(text) => handleChange('last_name', text)}
               placeholderTextColor="#999"
             />
-
-            {/* Username */}
             <TextInput
               style={styles.input}
               placeholder="Username *"
@@ -213,8 +195,6 @@ export default function RegisterScreen({ navigation }: any) {
               autoCapitalize="none"
               placeholderTextColor="#999"
             />
-
-            {/* Email */}
             <TextInput
               style={styles.input}
               placeholder="Email *"
@@ -224,8 +204,6 @@ export default function RegisterScreen({ navigation }: any) {
               autoCapitalize="none"
               placeholderTextColor="#999"
             />
-
-            {/* Phone Number */}
             <TextInput
               style={styles.input}
               placeholder="Phone Number (optional)"
@@ -234,8 +212,6 @@ export default function RegisterScreen({ navigation }: any) {
               keyboardType="phone-pad"
               placeholderTextColor="#999"
             />
-
-            {/* Password */}
             <TextInput
               style={styles.input}
               placeholder="Password *"
@@ -245,8 +221,6 @@ export default function RegisterScreen({ navigation }: any) {
               autoCapitalize="none"
               placeholderTextColor="#999"
             />
-
-            {/* Confirm Password */}
             <TextInput
               style={styles.input}
               placeholder="Confirm Password *"
@@ -257,7 +231,6 @@ export default function RegisterScreen({ navigation }: any) {
               placeholderTextColor="#999"
             />
 
-            {/* Register Button */}
             <TouchableOpacity
               style={styles.button}
               onPress={handleRegister}
@@ -270,7 +243,6 @@ export default function RegisterScreen({ navigation }: any) {
               )}
             </TouchableOpacity>
 
-            {/* Link to Login */}
             <TouchableOpacity
               style={styles.linkButton}
               onPress={() => navigation.navigate('Login')}
@@ -286,6 +258,7 @@ export default function RegisterScreen({ navigation }: any) {
   );
 }
 
+// Styles remain the same (use your existing styles)
 const styles = StyleSheet.create({
   container: {
     flex: 1,

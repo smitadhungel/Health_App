@@ -60,6 +60,30 @@ if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
   file(TOUCH_NOCREATE "/Users/roshan/Desktop/Health/frontend/android/app/.cxx/Debug/4b2iw4y6/x86_64/CMakeFiles/cmake.verify_globs")
 endif()
 
+# react_codegen_SRCS at /Users/roshan/Desktop/Health/frontend/node_modules/@react-native-community/geolocation/android/build/generated/source/codegen/jni/CMakeLists.txt:9 (file)
+file(GLOB NEW_GLOB LIST_DIRECTORIES true "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-community/geolocation/android/build/generated/source/codegen/jni/*.cpp")
+set(OLD_GLOB
+  "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-community/geolocation/android/build/generated/source/codegen/jni/RNCGeolocationSpec-generated.cpp"
+  )
+if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
+  message("-- GLOB mismatch!")
+  file(TOUCH_NOCREATE "/Users/roshan/Desktop/Health/frontend/android/app/.cxx/Debug/4b2iw4y6/x86_64/CMakeFiles/cmake.verify_globs")
+endif()
+
+# react_codegen_SRCS at /Users/roshan/Desktop/Health/frontend/node_modules/@react-native-community/geolocation/android/build/generated/source/codegen/jni/CMakeLists.txt:9 (file)
+file(GLOB NEW_GLOB LIST_DIRECTORIES true "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-community/geolocation/android/build/generated/source/codegen/jni/react/renderer/components/RNCGeolocationSpec/*.cpp")
+set(OLD_GLOB
+  "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-community/geolocation/android/build/generated/source/codegen/jni/react/renderer/components/RNCGeolocationSpec/ComponentDescriptors.cpp"
+  "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-community/geolocation/android/build/generated/source/codegen/jni/react/renderer/components/RNCGeolocationSpec/EventEmitters.cpp"
+  "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-community/geolocation/android/build/generated/source/codegen/jni/react/renderer/components/RNCGeolocationSpec/Props.cpp"
+  "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-community/geolocation/android/build/generated/source/codegen/jni/react/renderer/components/RNCGeolocationSpec/ShadowNodes.cpp"
+  "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-community/geolocation/android/build/generated/source/codegen/jni/react/renderer/components/RNCGeolocationSpec/States.cpp"
+  )
+if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
+  message("-- GLOB mismatch!")
+  file(TOUCH_NOCREATE "/Users/roshan/Desktop/Health/frontend/android/app/.cxx/Debug/4b2iw4y6/x86_64/CMakeFiles/cmake.verify_globs")
+endif()
+
 # LIB_CUSTOM_SRCS at /Users/roshan/Desktop/Health/frontend/node_modules/@react-native-picker/picker/android/src/main/jni/CMakeLists.txt:20 (file)
 file(GLOB NEW_GLOB LIST_DIRECTORIES true "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-picker/picker/android/src/main/jni/*.cpp")
 set(OLD_GLOB
@@ -156,6 +180,30 @@ set(OLD_GLOB
   "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-image-picker/android/build/generated/source/codegen/jni/react/renderer/components/RNImagePickerSpec/Props.cpp"
   "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-image-picker/android/build/generated/source/codegen/jni/react/renderer/components/RNImagePickerSpec/ShadowNodes.cpp"
   "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-image-picker/android/build/generated/source/codegen/jni/react/renderer/components/RNImagePickerSpec/States.cpp"
+  )
+if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
+  message("-- GLOB mismatch!")
+  file(TOUCH_NOCREATE "/Users/roshan/Desktop/Health/frontend/android/app/.cxx/Debug/4b2iw4y6/x86_64/CMakeFiles/cmake.verify_globs")
+endif()
+
+# react_codegen_SRCS at /Users/roshan/Desktop/Health/frontend/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/CMakeLists.txt:9 (file)
+file(GLOB NEW_GLOB LIST_DIRECTORIES true "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/*.cpp")
+set(OLD_GLOB
+  "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/RNPermissionsSpec-generated.cpp"
+  )
+if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
+  message("-- GLOB mismatch!")
+  file(TOUCH_NOCREATE "/Users/roshan/Desktop/Health/frontend/android/app/.cxx/Debug/4b2iw4y6/x86_64/CMakeFiles/cmake.verify_globs")
+endif()
+
+# react_codegen_SRCS at /Users/roshan/Desktop/Health/frontend/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/CMakeLists.txt:9 (file)
+file(GLOB NEW_GLOB LIST_DIRECTORIES true "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/react/renderer/components/RNPermissionsSpec/*.cpp")
+set(OLD_GLOB
+  "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/react/renderer/components/RNPermissionsSpec/ComponentDescriptors.cpp"
+  "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/react/renderer/components/RNPermissionsSpec/EventEmitters.cpp"
+  "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/react/renderer/components/RNPermissionsSpec/Props.cpp"
+  "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/react/renderer/components/RNPermissionsSpec/ShadowNodes.cpp"
+  "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/react/renderer/components/RNPermissionsSpec/States.cpp"
   )
 if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
   message("-- GLOB mismatch!")

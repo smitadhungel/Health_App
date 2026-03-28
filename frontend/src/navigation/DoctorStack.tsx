@@ -21,27 +21,30 @@ export default function DoctorStack() {
       <Stack.Screen 
         name="DoctorDetails" 
         component={DoctorDetails} 
-        options={{ title: 'Doctor Profile' }}
+        options={{ 
+         title: 'Professional Information',
+         headerBackVisible: false, // Hide back button during onboarding
+        }}
       />
       <Stack.Screen 
         name="SetAvailability" 
         component={SetAvailabilityScreen} 
-        options={{ title: 'Set Availability' }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen 
         name="AppointmentsCalendar" 
         component={AppointmentsCalendar} 
-        options={{ title: 'Calendar' }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen 
         name="PatientDetails" 
         component={PatientDetails} 
-        options={{ title: 'Patient Details' }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen 
         name="AppointmentDetails" 
         component={AppointmentDetails} 
-        options={{ title: 'Appointment Details' }}
+        options={{ headerShown: false}}
       />
 
     </Stack.Navigator>

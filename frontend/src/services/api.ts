@@ -14,8 +14,9 @@ import {
 } from './types';
 
 
- const BASE_URL = 'http://192.168.100.9:8000/api';
-//  const BASE_URL = 'http://192.168.10.175:8000/api';
+   const BASE_URL = 'http://192.168.100.9:8000/api';
+  // const BASE_URL = 'http://192.168.10.175:8000/api';
+  // const BASE_URL = 'http://192.168.1.74:8000/api';
 
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,

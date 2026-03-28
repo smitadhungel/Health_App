@@ -13,6 +13,9 @@ import DocumentsScreen from '../screens/patient/documentScreen';
 import DocumentDetailsScreen from '../screens/patient/DocumentDetailsScreen';
 
 import DoctorRegistrationScreen from '../screens/doctor/DoctorRegistrationScreen';
+
+import TestScreen from '../screens/test';
+import NearbyPlacesScreen from '../screens/patient/NearbyPlacesScreen';
 const Stack = createNativeStackNavigator<PatientStackParamList>();
 
 export default function PatientStack() {
@@ -29,7 +32,7 @@ export default function PatientStack() {
     },
     headerTintColor: '#16a34a',
   }}>
-      <Stack.Screen 
+       <Stack.Screen 
         name="PatientHome" 
         component={PatientHomeScreen} 
         options={{ headerShown: false }}
@@ -84,6 +87,14 @@ export default function PatientStack() {
         component={DoctorRegistrationScreen} 
         options={{ headerShown: false }}
       />
+      <Stack.Screen 
+        name="PlaceDetails" 
+        component={NearbyPlacesScreen} 
+        options={{ headerShown: false }}
+      />
+
+      {/* <Stack.Screen name="PatientHome" component={TestScreen} />  */}
+      {/* <Stack.Screen name="Medications" component={TestScreen} /> */}
     </Stack.Navigator>
   );
 }

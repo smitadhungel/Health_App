@@ -3,5 +3,5 @@ from .views import NearbyPlacesView
 
 urlpatterns = [
     # ...
-    path('api/places/nearby/', NearbyPlacesView.as_view(), name='nearby-places'),
+    path('nearby/', NearbyPlacesView.as_view(), name='nearby-places'),
 ]

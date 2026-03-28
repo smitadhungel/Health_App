@@ -25,7 +25,9 @@ import {
   FileText,
 } from 'lucide-react-native';
 
-type MedicationsListNavigationProp = NativeStackNavigationProp<PatientStackParamList, 'Medications'>;
+ type MedicationsListNavigationProp = NativeStackNavigationProp<PatientStackParamList>;
+
+  // const navigation = useNavigation<NativeStackNavigationProp<PatientStackParamList>>();
 
 interface Medication {
   id: number;
@@ -79,36 +81,37 @@ export default function MedicationsListScreen() {
         medicationsAPI.getTodaysDoses(),
       ]);
 
+      // Use 'as any' to safely access properties (API responses may be objects)
+      const anyMeds = medsRes as any;
+      const anyStats = statsRes as any;
+      const anyDoses = dosesRes as any;
+
       // Extract medications array
       let medicationsArray: Medication[] = [];
-      if (Array.isArray(medsRes)) {
-        medicationsArray = medsRes;
-      } else if (medsRes && typeof medsRes === 'object' && 'medications' in medsRes && Array.isArray(medsRes.medications)) {
-        medicationsArray = medsRes.medications;
-      } else {
-        console.warn('Unexpected medications response format', medsRes);
+      if (Array.isArray(anyMeds)) {
+        medicationsArray = anyMeds;
+      } else if (anyMeds && anyMeds.medications && Array.isArray(anyMeds.medications)) {
+        medicationsArray = anyMeds.medications;
       }
 
       // Extract stats
       let statsData: Stats | null = null;
-      if (statsRes && typeof statsRes === 'object') {
-        if ('active_medications' in statsRes) {
-          statsData = statsRes as Stats;
-        } else if ('stats' in statsRes && statsRes.stats) {
-          statsData = statsRes.stats as Stats;
+      if (anyStats && typeof anyStats === 'object') {
+        if (anyStats.active_medications !== undefined) {
+          statsData = anyStats;
+        } else if (anyStats.stats && anyStats.stats.active_medications !== undefined) {
+          statsData = anyStats.stats;
         }
       }
 
       // Extract doses array
       let dosesArray: TodaysDose[] = [];
-      if (Array.isArray(dosesRes)) {
-        dosesArray = dosesRes;
-      } else if (dosesRes && typeof dosesRes === 'object') {
-        if ('doses' in dosesRes && Array.isArray(dosesRes.doses)) {
-          dosesArray = dosesRes.doses;
-        } else if ('appointments' in dosesRes && Array.isArray(dosesRes.appointments)) {
-          dosesArray = dosesRes.appointments;
-        }
+      if (Array.isArray(anyDoses)) {
+        dosesArray = anyDoses;
+      } else if (anyDoses && anyDoses.doses && Array.isArray(anyDoses.doses)) {
+        dosesArray = anyDoses.doses;
+      } else if (anyDoses && anyDoses.appointments && Array.isArray(anyDoses.appointments)) {
+        dosesArray = anyDoses.appointments;
       }
 
       setMedications(medicationsArray);
@@ -129,7 +132,7 @@ export default function MedicationsListScreen() {
   };
 
   const handleAddMedication = () => {
-    navigation.navigate('Medications'); // fixed: was 'Medications'
+    navigation.navigate('AddMedication',{}); // fixed: was 'Medications'
   };
 
   const handleMedicationPress = (medicationId: number) => {

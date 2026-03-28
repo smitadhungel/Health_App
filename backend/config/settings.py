@@ -12,7 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-esg6xa3ivh#4u6hh^x3rlr!t4-*l)fiju(edkox&fqbc67jm&_'
-GOOGLE_PLACES_API_KEY = 'AIzaSyCw3ll3NpmbunKvXC6G1ohzs73TwZaYh5c'
+GOOGLE_PLACES_API_KEY = 'AIzaSyD6soD8XDgZbS1a6QBVEHmVlsDjkNcXMKs'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -54,7 +54,7 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'config.urls'
 
 CORS_ALLOW_ALL_ORIGINS = True
-ALLOWED_HOSTS = ['192.168.1.5', '127.0.0.1', '192.168.100.9']
+ALLOWED_HOSTS = ['192.168.1.5', '127.0.0.1', '192.168.100.9','192.168.1.74']
 CORS_ALLOW_CREDENTIALS = True
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

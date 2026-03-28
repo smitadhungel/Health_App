@@ -68,7 +68,7 @@ urlpatterns = [
     # Medications
     path('api/medications/', include('medications.urls')),
     # for the pharmacy 
-    path('api/pacle/',include('place.urls')),
+    path('api/places/',include('place.urls')),
     
     # ============================================
     # API DOCUMENTATION

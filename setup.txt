@@ -1,0 +1,51 @@
+first thing is to get the setup for the Backend 
+
+creating the virtual enviroment in terminal 
+python -m venv .venv
+ 
+ to activate the virtual enviroment
+.venv\Scripts\activate
+
+the virtual enviroment should be activate everytime when we runserver or any thing 
+
+now we have to intall all the required packages after activating the enviroment 
+
+pip install -r requirements.txt
+pip install pillow
+pip install requests
+
+
+now for the frontend 
+npm install 
+
+if we are testing the app in real mbl then we have to make sure the following things 
+
+1. First of all both the laptop and mobile should be connected to the same wifi
+2. get the ip address of the netwrok for that run this cmd 
+    Get-NetIPAddress
+    the ip address will be of this type 192.168.1.5
+    after this open the backend -> config ->settings.py 
+    open that and in that file u will find this line
+
+    ALLOWED_HOSTS = ['192.168.1.5', '127.0.0.1', '192.168.100.9','192.168.1.74']
+    add the ur new ip address in that line 
+
+    after this we have to change the basurl of the frontend for that open 
+    frontend -> src ->screens->servies->api.ts 
+     then there is this line 
+     const BASE_URL = 'http://192.168.100.9:8000/api';
+     here the ip address is 192.168.100.9  replace this with ur current ip 
+
+
+now here we will learn to  run the app 
+
+backend 
+.venv\Scripts\activate
+python manage.py runserver 0.0.0.0:8000
+
+
+forntend 
+adb devices it will show the list of decives 
+adb reverse tcp:8081 tcp:8081 run this cmd if ur app dont get connected to the metro 
+npx react-native run-android
+npx react-native start
