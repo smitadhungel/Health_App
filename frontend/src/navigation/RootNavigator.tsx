@@ -1,12 +1,20 @@
 import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { useReminders } from '../hooks/useReminders';
+import { configureNotifications } from '../services/notifications';
 import AuthStack from './AuthStack';
 import PatientStack from './PatientStack';
 import DoctorStack from './DoctorStack';
 
 export default function RootNavigator() {
   const { userToken, userRole, isLoading } = useAuth();
+
+  // Configure notifications (safe to call multiple times)
+  configureNotifications();
+
+  // Schedule reminders when user is logged in
+  useReminders();
 
   if (isLoading) {
     return (

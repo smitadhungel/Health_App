@@ -41,9 +41,9 @@
         "/Users/roshan/Desktop/Health/frontend/android/app/build/intermediates/cxx/Debug/4b2iw4y6/obj/x86_64/libreact_codegen_safeareacontext.so",
         "/Users/roshan/Desktop/Health/frontend/android/app/build/intermediates/cxx/Debug/4b2iw4y6/obj/x86_64/libreact_codegen_rnscreens.so",
         "/Users/roshan/Desktop/Health/frontend/android/app/build/intermediates/cxx/Debug/4b2iw4y6/obj/x86_64/libreact_codegen_rnsvg.so",
-        "/Users/roshan/.gradle/caches/9.0.0/transforms/b85f62a599074afc3b2ec6cfb7884973/transformed/fbjni-0.7.0/prefab/modules/fbjni/libs/android.x86_64/libfbjni.so",
-        "/Users/roshan/.gradle/caches/9.0.0/transforms/f97a0c8835e876dfb08e8efd6d33fd2f/transformed/react-android-0.83.1-debug/prefab/modules/jsi/libs/android.x86_64/libjsi.so",
-        "/Users/roshan/.gradle/caches/9.0.0/transforms/f97a0c8835e876dfb08e8efd6d33fd2f/transformed/react-android-0.83.1-debug/prefab/modules/reactnative/libs/android.x86_64/libreactnative.so"
+        "/Users/roshan/.gradle/caches/9.0.0/transforms/49cde1acd35737fffc0a351edeac3186/transformed/jetified-fbjni-0.7.0/prefab/modules/fbjni/libs/android.x86_64/libfbjni.so",
+        "/Users/roshan/.gradle/caches/9.0.0/transforms/975b5584e106111fd48e7aac9046beec/transformed/jetified-react-android-0.83.1-debug/prefab/modules/jsi/libs/android.x86_64/libjsi.so",
+        "/Users/roshan/.gradle/caches/9.0.0/transforms/975b5584e106111fd48e7aac9046beec/transformed/jetified-react-android-0.83.1-debug/prefab/modules/reactnative/libs/android.x86_64/libreactnative.so"
       ]
     },
     "react_codegen_RNCGeolocationSpec::@1b959fcb56e23f7716ba": {
@@ -92,9 +92,9 @@
       "artifactName": "react_codegen_rnpicker",
       "output": "/Users/roshan/Desktop/Health/frontend/android/app/build/intermediates/cxx/Debug/4b2iw4y6/obj/x86_64/libreact_codegen_rnpicker.so",
       "runtimeFiles": [
-        "/Users/roshan/.gradle/caches/9.0.0/transforms/f97a0c8835e876dfb08e8efd6d33fd2f/transformed/react-android-0.83.1-debug/prefab/modules/reactnative/libs/android.x86_64/libreactnative.so",
-        "/Users/roshan/.gradle/caches/9.0.0/transforms/f97a0c8835e876dfb08e8efd6d33fd2f/transformed/react-android-0.83.1-debug/prefab/modules/jsi/libs/android.x86_64/libjsi.so",
-        "/Users/roshan/.gradle/caches/9.0.0/transforms/b85f62a599074afc3b2ec6cfb7884973/transformed/fbjni-0.7.0/prefab/modules/fbjni/libs/android.x86_64/libfbjni.so"
+        "/Users/roshan/.gradle/caches/9.0.0/transforms/975b5584e106111fd48e7aac9046beec/transformed/jetified-react-android-0.83.1-debug/prefab/modules/reactnative/libs/android.x86_64/libreactnative.so",
+        "/Users/roshan/.gradle/caches/9.0.0/transforms/975b5584e106111fd48e7aac9046beec/transformed/jetified-react-android-0.83.1-debug/prefab/modules/jsi/libs/android.x86_64/libjsi.so",
+        "/Users/roshan/.gradle/caches/9.0.0/transforms/49cde1acd35737fffc0a351edeac3186/transformed/jetified-fbjni-0.7.0/prefab/modules/fbjni/libs/android.x86_64/libfbjni.so"
       ]
     },
     "react_codegen_rnreanimated::@8afabad14bfffa3f8b9a": {
@@ -108,9 +108,9 @@
       "artifactName": "react_codegen_rnscreens",
       "output": "/Users/roshan/Desktop/Health/frontend/android/app/build/intermediates/cxx/Debug/4b2iw4y6/obj/x86_64/libreact_codegen_rnscreens.so",
       "runtimeFiles": [
-        "/Users/roshan/.gradle/caches/9.0.0/transforms/f97a0c8835e876dfb08e8efd6d33fd2f/transformed/react-android-0.83.1-debug/prefab/modules/reactnative/libs/android.x86_64/libreactnative.so",
-        "/Users/roshan/.gradle/caches/9.0.0/transforms/f97a0c8835e876dfb08e8efd6d33fd2f/transformed/react-android-0.83.1-debug/prefab/modules/jsi/libs/android.x86_64/libjsi.so",
-        "/Users/roshan/.gradle/caches/9.0.0/transforms/b85f62a599074afc3b2ec6cfb7884973/transformed/fbjni-0.7.0/prefab/modules/fbjni/libs/android.x86_64/libfbjni.so"
+        "/Users/roshan/.gradle/caches/9.0.0/transforms/975b5584e106111fd48e7aac9046beec/transformed/jetified-react-android-0.83.1-debug/prefab/modules/reactnative/libs/android.x86_64/libreactnative.so",
+        "/Users/roshan/.gradle/caches/9.0.0/transforms/975b5584e106111fd48e7aac9046beec/transformed/jetified-react-android-0.83.1-debug/prefab/modules/jsi/libs/android.x86_64/libjsi.so",
+        "/Users/roshan/.gradle/caches/9.0.0/transforms/49cde1acd35737fffc0a351edeac3186/transformed/jetified-fbjni-0.7.0/prefab/modules/fbjni/libs/android.x86_64/libfbjni.so"
       ]
     },
     "react_codegen_rnsvg::@4f40eb209d0c0b4a3b65": {
@@ -119,9 +119,9 @@
       "artifactName": "react_codegen_rnsvg",
       "output": "/Users/roshan/Desktop/Health/frontend/android/app/build/intermediates/cxx/Debug/4b2iw4y6/obj/x86_64/libreact_codegen_rnsvg.so",
       "runtimeFiles": [
-        "/Users/roshan/.gradle/caches/9.0.0/transforms/f97a0c8835e876dfb08e8efd6d33fd2f/transformed/react-android-0.83.1-debug/prefab/modules/reactnative/libs/android.x86_64/libreactnative.so",
-        "/Users/roshan/.gradle/caches/9.0.0/transforms/f97a0c8835e876dfb08e8efd6d33fd2f/transformed/react-android-0.83.1-debug/prefab/modules/jsi/libs/android.x86_64/libjsi.so",
-        "/Users/roshan/.gradle/caches/9.0.0/transforms/b85f62a599074afc3b2ec6cfb7884973/transformed/fbjni-0.7.0/prefab/modules/fbjni/libs/android.x86_64/libfbjni.so"
+        "/Users/roshan/.gradle/caches/9.0.0/transforms/975b5584e106111fd48e7aac9046beec/transformed/jetified-react-android-0.83.1-debug/prefab/modules/reactnative/libs/android.x86_64/libreactnative.so",
+        "/Users/roshan/.gradle/caches/9.0.0/transforms/975b5584e106111fd48e7aac9046beec/transformed/jetified-react-android-0.83.1-debug/prefab/modules/jsi/libs/android.x86_64/libjsi.so",
+        "/Users/roshan/.gradle/caches/9.0.0/transforms/49cde1acd35737fffc0a351edeac3186/transformed/jetified-fbjni-0.7.0/prefab/modules/fbjni/libs/android.x86_64/libfbjni.so"
       ]
     },
     "react_codegen_rnworklets::@68f58d84d4754f193387": {
@@ -135,9 +135,9 @@
       "artifactName": "react_codegen_safeareacontext",
       "output": "/Users/roshan/Desktop/Health/frontend/android/app/build/intermediates/cxx/Debug/4b2iw4y6/obj/x86_64/libreact_codegen_safeareacontext.so",
       "runtimeFiles": [
-        "/Users/roshan/.gradle/caches/9.0.0/transforms/b85f62a599074afc3b2ec6cfb7884973/transformed/fbjni-0.7.0/prefab/modules/fbjni/libs/android.x86_64/libfbjni.so",
-        "/Users/roshan/.gradle/caches/9.0.0/transforms/f97a0c8835e876dfb08e8efd6d33fd2f/transformed/react-android-0.83.1-debug/prefab/modules/jsi/libs/android.x86_64/libjsi.so",
-        "/Users/roshan/.gradle/caches/9.0.0/transforms/f97a0c8835e876dfb08e8efd6d33fd2f/transformed/react-android-0.83.1-debug/prefab/modules/reactnative/libs/android.x86_64/libreactnative.so"
+        "/Users/roshan/.gradle/caches/9.0.0/transforms/49cde1acd35737fffc0a351edeac3186/transformed/jetified-fbjni-0.7.0/prefab/modules/fbjni/libs/android.x86_64/libfbjni.so",
+        "/Users/roshan/.gradle/caches/9.0.0/transforms/975b5584e106111fd48e7aac9046beec/transformed/jetified-react-android-0.83.1-debug/prefab/modules/jsi/libs/android.x86_64/libjsi.so",
+        "/Users/roshan/.gradle/caches/9.0.0/transforms/975b5584e106111fd48e7aac9046beec/transformed/jetified-react-android-0.83.1-debug/prefab/modules/reactnative/libs/android.x86_64/libreactnative.so"
       ]
     }
   },

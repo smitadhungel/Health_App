@@ -14,6 +14,9 @@ pip install -r requirements.txt
 pip install pillow
 pip install requests
 
+Here we will make the migrations of the all the tables 
+ python manage.py makemigrations
+ python manage.py migrate
 
 now for the frontend 
 npm install 

@@ -14,6 +14,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { PatientStackParamList } from '../../navigation/types';
 import { authAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { scheduleNotification } from '../../services/notifications';
 import {
   Mail,
   Phone,
@@ -100,6 +101,19 @@ export default function PatientHomeScreen() {
       </View>
     );
   }
+
+
+  const testNotification = () => {
+  const testDate = new Date();
+  testDate.setMinutes(testDate.getMinutes() + 2);
+  scheduleNotification(
+    'test_reminder',
+    'Test Reminder',
+    'This is a test notification',
+    testDate
+  );
+  Alert.alert('Scheduled', 'Notification will appear in 2 minutes');
+};
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -210,6 +224,10 @@ export default function PatientHomeScreen() {
         <LogOut size={22} color="#dc2626" />
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity style={styles.logoutButton} onPress={testNotification}>
+         <Text>Test Notification</Text>
+          </TouchableOpacity>
     </ScrollView>
   );
 }

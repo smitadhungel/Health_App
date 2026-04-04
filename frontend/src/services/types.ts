@@ -65,6 +65,7 @@ export interface Appointment {
   duration_minutes: number;
   created_at: string;
   updated_at: string;
+  doctor_name:string
 }
 
 export interface Medication {
