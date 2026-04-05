@@ -14,7 +14,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { PatientStackParamList } from '../../navigation/types';
 import { authAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { scheduleNotification } from '../../services/notifications';
+import PushNotification from 'react-native-push-notification';
+
 import {
   Mail,
   Phone,
@@ -103,17 +104,15 @@ export default function PatientHomeScreen() {
   }
 
 
-  const testNotification = () => {
-  const testDate = new Date();
-  testDate.setMinutes(testDate.getMinutes() + 2);
-  scheduleNotification(
-    'test_reminder',
-    'Test Reminder',
-    'This is a test notification',
-    testDate
-  );
-  Alert.alert('Scheduled', 'Notification will appear in 2 minutes');
-};
+//   const testNotification = () => {
+//     PushNotification.localNotificationSchedule({
+//     channelId: 'medication_reminders',
+//     title: 'Test',
+//     message: 'This is a test notification',
+//     date: new Date(Date.now() + 2000),
+//     allowWhileIdle: true,
+//   });
+// };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -225,9 +224,21 @@ export default function PatientHomeScreen() {
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.logoutButton} onPress={testNotification}>
-         <Text>Test Notification</Text>
-          </TouchableOpacity>
+    
+{/* <TouchableOpacity
+  style={styles.testButton}
+  onPress={() => {
+    PushNotification.localNotificationSchedule({
+      channelId: 'medication_reminders',
+      title: '10s Test',
+      message: 'This should appear in 10 seconds',
+      date: new Date(Date.now() + 10000),
+      allowWhileIdle: true,
+    });
+  }}
+>
+  <Text>Test Notification (10s)</Text>
+</TouchableOpacity> */}
     </ScrollView>
   );
 }
@@ -406,4 +417,15 @@ const styles = StyleSheet.create({
     color: '#dc2626',
     marginLeft: 8,
   },
+  testButton: {
+  backgroundColor: '#16a34a',
+  padding: 12,
+  borderRadius: 8,
+  marginTop: 20,
+  alignItems: 'center',
+},
+testButtonText: {
+  color: '#fff',
+  fontWeight: '600',
+},
 });

@@ -16,6 +16,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useForm, Controller } from 'react-hook-form';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { medicationsAPI } from '../../../services/api';
+import { useRemindersContext } from '../../../context/RemindersContext';
 import {
   Pill,
   Activity,
@@ -27,7 +28,6 @@ import {
   Edit3,
   Trash2,
   CheckCircle,
-  AlertCircle,
 } from 'lucide-react-native';
 
 const FREQUENCY_CHOICES = [
@@ -40,22 +40,18 @@ const FREQUENCY_CHOICES = [
 
 const getDefaultTimes = (frequency: string): string[] => {
   switch (frequency) {
-    case 'ONCE_DAILY':
-      return ['08:00'];
-    case 'TWICE_DAILY':
-      return ['08:00', '20:00'];
-    case 'THRICE_DAILY':
-      return ['08:00', '14:00', '20:00'];
-    case 'FOUR_TIMES_DAILY':
-      return ['08:00', '12:00', '16:00', '20:00'];
-    default:
-      return [];
+    case 'ONCE_DAILY':      return ['08:00'];
+    case 'TWICE_DAILY':     return ['08:00', '20:00'];
+    case 'THRICE_DAILY':    return ['08:00', '14:00', '20:00'];
+    case 'FOUR_TIMES_DAILY':return ['08:00', '12:00', '16:00', '20:00'];
+    default:                return [];
   }
 };
 
 export default function AddMedicationScreen() {
   const navigation = useNavigation();
   const route = useRoute();
+  const { refresh } = useRemindersContext(); // ← added
   const medicationId = (route.params as { medicationId?: string })?.medicationId;
   const isEditing = !!medicationId;
 
@@ -123,7 +119,6 @@ export default function AddMedicationScreen() {
       setValue('duration_days', med.duration_days ? med.duration_days.toString() : '');
       setValue('instructions', med.instructions || '');
       setValue('form', med.form || 'TABLET');
-
       const schedules = await medicationsAPI.getSchedules(medId);
       setDoseTimes(schedules.map(s => s.time));
     } catch (error) {
@@ -193,6 +188,7 @@ export default function AddMedicationScreen() {
       if (isEditing) {
         if (!medicationId) return;
         await medicationsAPI.update(parseInt(medicationId, 10), payload);
+        refresh(); // ← reschedule after edit
         Alert.alert('Success', 'Medication updated successfully.');
       } else {
         const response = await medicationsAPI.create(payload);
@@ -200,6 +196,7 @@ export default function AddMedicationScreen() {
         for (const time of doseTimes) {
           await medicationsAPI.addSchedule(medication.id, { time, dosage_count: 1 });
         }
+        refresh(); // ← reschedule after new medication + schedules added
         Alert.alert('Success', 'Medication added successfully.');
       }
       navigation.goBack();
@@ -312,7 +309,7 @@ export default function AddMedicationScreen() {
       )}
       {errors.start_date && <Text style={styles.error}>{errors.start_date.message}</Text>}
 
-      {/* Duration (days) */}
+      {/* Duration */}
       <Text style={styles.label}>Duration (days, optional)</Text>
       <View style={styles.inputWrapper}>
         <CalendarRange size={20} color="#16a34a" style={styles.inputIcon} />
@@ -386,7 +383,6 @@ export default function AddMedicationScreen() {
               </View>
             </View>
           ))}
-
           <TouchableOpacity
             style={styles.addTimeButton}
             onPress={() => {
@@ -397,7 +393,6 @@ export default function AddMedicationScreen() {
             <Plus size={20} color="#fff" />
             <Text style={styles.addTimeText}>Add Dose Time</Text>
           </TouchableOpacity>
-
           {showTimePicker && (
             <DateTimePicker
               mode="time"
@@ -410,7 +405,7 @@ export default function AddMedicationScreen() {
         </>
       )}
 
-      {/* Submit Button */}
+      {/* Submit */}
       <TouchableOpacity
         style={[styles.submitButton, loading && styles.disabledButton]}
         onPress={handleSubmit(onSubmit)}
@@ -430,184 +425,33 @@ export default function AddMedicationScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    backgroundColor: '#f0fdf4',
-    flexGrow: 1,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f0fdf4',
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#14532d',
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#166534',
-    marginTop: 16,
-    marginBottom: 6,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#bbf7d0',
-    borderRadius: 12,
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 12,
-  },
-  inputIcon: {
-    marginRight: 8,
-  },
-  input: {
-    flex: 1,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: '#14532d',
-  },
-  pickerWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#bbf7d0',
-    borderRadius: 12,
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 8,
-  },
-  pickerIcon: {
-    marginRight: 4,
-  },
-  picker: {
-    flex: 1,
-    height: 50,
-    color: '#14532d',
-  },
-  dateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#bbf7d0',
-    borderRadius: 12,
-    backgroundColor: '#dcfce7',
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-  },
-  dateIcon: {
-    marginRight: 8,
-  },
-  dateText: {
-    fontSize: 16,
-    color: '#14532d',
-    flex: 1,
-  },
-  textAreaWrapper: {
-    alignItems: 'flex-start',
-  },
-  textArea: {
-    minHeight: 80,
-    textAlignVertical: 'top',
-    paddingTop: 12,
-  },
-  timeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#ecfdf5',
-    padding: 12,
-    borderRadius: 12,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: '#bbf7d0',
-  },
-  timeRowReadOnly: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f0fdf4',
-    padding: 12,
-    borderRadius: 12,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: '#bbf7d0',
-  },
-  timeInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  timeText: {
-    fontSize: 16,
-    color: '#14532d',
-    marginLeft: 8,
-  },
-  timeActions: {
-    flexDirection: 'row',
-  },
-  editButton: {
-    padding: 6,
-    marginRight: 8,
-    backgroundColor: '#dcfce7',
-    borderRadius: 8,
-  },
-  removeButton: {
-    padding: 6,
-    backgroundColor: '#fee2e2',
-    borderRadius: 8,
-  },
-  addTimeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#16a34a',
-    padding: 14,
-    borderRadius: 30,
-    marginTop: 12,
-  },
-  addTimeText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  note: {
-    fontSize: 14,
-    color: '#6b7280',
-    fontStyle: 'italic',
-    marginTop: 8,
-  },
-  submitButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#16a34a',
-    padding: 16,
-    borderRadius: 30,
-    marginTop: 32,
-    marginBottom: 20,
-    shadowColor: '#16a34a',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  disabledButton: {
-    backgroundColor: '#bbf7d0',
-  },
-  submitText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  error: {
-    color: '#ef4444',
-    fontSize: 13,
-    marginTop: 4,
-    marginLeft: 4,
-  },
+  container: { padding: 20, backgroundColor: '#f0fdf4', flexGrow: 1 },
+  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0fdf4' },
+  title: { fontSize: 26, fontWeight: 'bold', color: '#14532d', marginBottom: 20 },
+  label: { fontSize: 16, fontWeight: '600', color: '#166534', marginTop: 16, marginBottom: 6 },
+  inputWrapper: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#bbf7d0', borderRadius: 12, backgroundColor: '#ffffff', paddingHorizontal: 12 },
+  inputIcon: { marginRight: 8 },
+  input: { flex: 1, paddingVertical: 14, fontSize: 16, color: '#14532d' },
+  pickerWrapper: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#bbf7d0', borderRadius: 12, backgroundColor: '#ffffff', paddingHorizontal: 8 },
+  pickerIcon: { marginRight: 4 },
+  picker: { flex: 1, height: 50, color: '#14532d' },
+  dateButton: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#bbf7d0', borderRadius: 12, backgroundColor: '#dcfce7', paddingHorizontal: 12, paddingVertical: 14 },
+  dateIcon: { marginRight: 8 },
+  dateText: { fontSize: 16, color: '#14532d', flex: 1 },
+  textAreaWrapper: { alignItems: 'flex-start' },
+  textArea: { minHeight: 80, textAlignVertical: 'top', paddingTop: 12 },
+  timeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ecfdf5', padding: 12, borderRadius: 12, marginTop: 8, borderWidth: 1, borderColor: '#bbf7d0' },
+  timeRowReadOnly: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0fdf4', padding: 12, borderRadius: 12, marginTop: 8, borderWidth: 1, borderColor: '#bbf7d0' },
+  timeInfo: { flexDirection: 'row', alignItems: 'center' },
+  timeText: { fontSize: 16, color: '#14532d', marginLeft: 8 },
+  timeActions: { flexDirection: 'row' },
+  editButton: { padding: 6, marginRight: 8, backgroundColor: '#dcfce7', borderRadius: 8 },
+  removeButton: { padding: 6, backgroundColor: '#fee2e2', borderRadius: 8 },
+  addTimeButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#16a34a', padding: 14, borderRadius: 30, marginTop: 12 },
+  addTimeText: { color: '#fff', fontSize: 16, fontWeight: '600', marginLeft: 8 },
+  note: { fontSize: 14, color: '#6b7280', fontStyle: 'italic', marginTop: 8 },
+  submitButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#16a34a', padding: 16, borderRadius: 30, marginTop: 32, marginBottom: 20, elevation: 3 },
+  disabledButton: { backgroundColor: '#bbf7d0' },
+  submitText: { color: '#fff', fontSize: 18, fontWeight: '600', marginLeft: 8 },
+  error: { color: '#ef4444', fontSize: 13, marginTop: 4, marginLeft: 4 },
 });

@@ -3,20 +3,34 @@ import { useAuth } from '../context/AuthContext';
 import { medicationsAPI, appointmentsAPI } from '../services/api';
 import { scheduleNotification, cancelAllNotifications } from '../services/notifications';
 
-export const useReminders = () => {
-  const { userToken } = useAuth();
+const MS_PER_DAY = 86400000;
+
+export const useReminders = (refreshTrigger = 0) => {
+  const { userToken, userRole } = useAuth();
 
   useEffect(() => {
-    if (!userToken) return;
-
     const scheduleAll = async () => {
-      try {
-        cancelAllNotifications(); // remove previous schedules
+      if (!userToken) {
+        console.log('useReminders: No token, skipping');
+        return;
+      }
+      if (userRole?.toUpperCase() !== 'PATIENT') {
+        console.log('useReminders: Not a patient, skipping');
+        return;
+      }
 
-        // ---------- Medication reminders ----------
+      console.log('useReminders: Starting to schedule reminders for patient');
+
+      try {
+        cancelAllNotifications();
+
+        // ── Medications ──────────────────────────────────────────
+        console.log('Fetching medications...');
         const medsRes = await medicationsAPI.getMyMedications();
-        // API may return an array directly or an object with a 'medications' property
-        const meds = Array.isArray(medsRes) ? medsRes : (medsRes as any).medications || [];
+        const meds = Array.isArray(medsRes)
+          ? medsRes
+          : (medsRes as any).medications || [];
+        console.log(`Found ${meds.length} medications`);
 
         for (const med of meds) {
           const schedules = await medicationsAPI.getSchedules(med.id);
@@ -24,42 +38,88 @@ export const useReminders = () => {
           const now = new Date();
 
           for (const sched of schedules) {
-            const [hour, minute] = sched.time.split(':');
-            let doseTime = new Date();
-            // doseTime.setHours(parseInt(hour), parseInt(minute), 0, 0);
-            doseTime.setMinutes(doseTime.getMinutes() + 2);
+            const [hourStr, minuteStr] = sched.time.split(':');
+            const hour = parseInt(hourStr, 10);
+            const minute = parseInt(minuteStr, 10);
 
-            if (doseTime <= now) doseTime.setDate(doseTime.getDate() + 1);
-            if (endDate && doseTime > endDate) continue;
+            // Start from today's dose time
+            let firstDose = new Date();
+            firstDose.setHours(hour, minute, 0, 0);
 
-            scheduleNotification(
-              `med_${med.id}_${sched.time}`,
-              `${med.name}`,
-              `Time to take your dose at ${sched.time}`,
-              doseTime,
-              'day' // repeat daily
-            );
+            // If today's time has already passed, start from tomorrow
+            if (firstDose <= now) {
+              firstDose = new Date(firstDose.getTime() + MS_PER_DAY);
+            }
+
+            // Schedule one notification per day for up to 30 days
+            for (let day = 0; day < 30; day++) {
+              const doseTime = new Date(firstDose.getTime() + day * MS_PER_DAY);
+
+              // Stop scheduling if we've passed the medication end date
+              if (endDate && doseTime > endDate) break;
+
+              console.log(`Scheduling medication notification for ${med.name} at ${doseTime}`);
+
+              scheduleNotification(
+                `med_${med.id}_${sched.time}_day${day}`,
+                `💊 ${med.name}`,
+                `Time to take your dose at ${sched.time}`,
+                doseTime
+              );
+            }
           }
         }
 
-        // ---------- Appointment reminders ----------
-        const aptsRes = await appointmentsAPI.getMyAppointments({ status: 'upcoming' });
-        // API may return an array directly or an object with an 'appointments' property
-        const appointments = Array.isArray(aptsRes) ? aptsRes : (aptsRes as any).appointments || [];
+        // ── Appointments ─────────────────────────────────────────
+        console.log('Fetching appointments...');
+        const aptsRes = await appointmentsAPI.getMyAppointments({ filter: 'upcoming' });
+        const appointments = Array.isArray(aptsRes)
+          ? aptsRes
+          : (aptsRes as any).appointments || [];
+        console.log(`Found ${appointments.length} upcoming appointments`);
 
         for (const apt of appointments) {
-          const aptTime = apt.appointment_time;
-          const aptDateTime = new Date(apt.appointment_date + 'T' + aptTime);
+          console.log('Appointment object:', JSON.stringify(apt, null, 2));
+
+          const aptTime: string = apt.appointment_time;
+          const normalizedTime = aptTime.length === 5 ? `${aptTime}:00` : aptTime;
+          const aptDateTime = new Date(`${apt.appointment_date}T${normalizedTime}`);
+
+          // Skip if the parsed date is invalid
+          if (isNaN(aptDateTime.getTime())) {
+            console.warn(
+              `Skipping appointment ${apt.id}: invalid date/time`,
+              apt.appointment_date,
+              aptTime
+            );
+            continue;
+          }
+
           const now = new Date();
+
+          // Skip appointments that are already past
+          if (aptDateTime <= now) {
+            console.log(`Skipping past appointment ${apt.id} on ${apt.appointment_date}`);
+            continue;
+          }
+
+          // Resolve doctor name safely across different response shapes
+          const doctorName =
+            apt.doctor_name ||
+            apt.doctor?.full_name ||
+            apt.doctor?.user?.first_name + ' ' + apt.doctor?.user?.last_name ||
+            apt.doctor?.user?.first_name ||
+            'your doctor';
 
           // 1 day before
           const dayBefore = new Date(aptDateTime);
           dayBefore.setDate(dayBefore.getDate() - 1);
           if (dayBefore > now) {
+            console.log(`Scheduling 1-day reminder for appointment on ${apt.appointment_date}`);
             scheduleNotification(
               `apt_${apt.id}_daybefore`,
-              `Appointment Reminder`,
-              `You have an appointment with Dr. ${apt.doctor_name} tomorrow at ${aptTime}`,
+              `📅 Appointment Reminder`,
+              `You have an appointment with Dr. ${doctorName} tomorrow at ${aptTime}`,
               dayBefore
             );
           }
@@ -68,19 +128,32 @@ export const useReminders = () => {
           const hourBefore = new Date(aptDateTime);
           hourBefore.setHours(hourBefore.getHours() - 1);
           if (hourBefore > now) {
+            console.log(`Scheduling 1-hour reminder for appointment at ${aptTime}`);
             scheduleNotification(
               `apt_${apt.id}_hourbefore`,
-              `Appointment in 1 hour`,
-              `Your appointment with Dr. ${apt.doctor_name} is at ${aptTime}`,
+              `⏰ Appointment in 1 hour`,
+              `Your appointment with Dr. ${doctorName} is at ${aptTime}`,
               hourBefore
             );
           }
         }
-      } catch (error) {
-        console.error('Error scheduling reminders:', error);
+
+        console.log('useReminders: All reminders scheduled successfully');
+      } catch (error: any) {
+        console.error('useReminders error:', error?.message || error);
+        if (error.response) {
+          console.error('Response status:', error.response.status);
+          console.error('Response data:', error.response.data);
+        }
       }
     };
 
     scheduleAll();
-  }, [userToken]);
+  }, [userToken, userRole, refreshTrigger]);
+};
+
+export const refreshReminders = (
+  setTrigger: React.Dispatch<React.SetStateAction<number>>
+) => {
+  setTrigger(prev => prev + 1);
 };

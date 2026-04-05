@@ -42,6 +42,29 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// api.interceptors.response.use(
+//   (response) => response,
+//   async (error) => {
+//     const originalRequest = error.config;
+//     if (error.response?.status === 401 && !originalRequest._retry) {
+//       originalRequest._retry = true;
+//       try {
+//         const refreshToken = await AsyncStorage.getItem('refresh_token');
+//         const response = await axios.post('/api/users/token/refresh/', { refresh: refreshToken });
+//         await AsyncStorage.setItem('access_token', response.data.access);
+//         originalRequest.headers.Authorization = `Bearer ${response.data.access}`;
+//         return api(originalRequest);
+//       } catch (refreshError) {
+//         // Refresh failed – logout
+//         await AsyncStorage.multiRemove(['access_token', 'refresh_token', 'user', 'user_role']);
+//         // Optionally navigate to login
+//         return Promise.reject(refreshError);
+//       }
+//     }
+//     return Promise.reject(error);
+//   }
+// );
+
 
 // RESPONSE INTERCEPTOR (Handle Errors)
 
