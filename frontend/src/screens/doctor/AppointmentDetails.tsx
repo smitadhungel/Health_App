@@ -24,8 +24,7 @@ type RootStackParamList = {
 type AppointmentDetailsRouteProp = RouteProp<RootStackParamList, 'AppointmentDetails'>;
 type AppointmentDetailsNavigationProp = NativeStackNavigationProp<RootStackParamList, 'AppointmentDetails'>;
 
-// Match the imported Appointment type's status (based on error message)
-type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
+type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
 
 interface AppointmentDetail {
   id: number;
@@ -56,75 +55,81 @@ export default function AppointmentDetails() {
   const [updating, setUpdating] = useState(false);
   const [doctorNotes, setDoctorNotes] = useState('');
   const [prescription, setPrescription] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<AppointmentStatus>('pending');
+  const [selectedStatus, setSelectedStatus] = useState<AppointmentStatus>('PENDING');
 
   useEffect(() => {
     fetchAppointmentDetails();
   }, []);
 
   const fetchAppointmentDetails = async () => {
-    setLoading(true);
-    try {
-      const response = await appointmentsAPI.getDetails(appointmentId);
-      const data = response as any;
-      
-      // Map status to our limited union, default to 'pending' if unknown
-      let mappedStatus: AppointmentStatus = 'pending';
-      const rawStatus = data.status?.toLowerCase();
-      if (rawStatus === 'confirmed') mappedStatus = 'confirmed';
-      else if (rawStatus === 'completed') mappedStatus = 'completed';
-      else if (rawStatus === 'cancelled') mappedStatus = 'cancelled';
-      else mappedStatus = 'pending'; // includes 'no_show' or others
+  setLoading(true);
+  try {
+    const response = await appointmentsAPI.getDetails(appointmentId);
+    const data = response as any;
 
-      const mapped: AppointmentDetail = {
-        id: data.id,
-        patient: data.patient,
-        appointment_date: data.appointment_date,
-        appointment_time: data.appointment_time,
-        status: mappedStatus,
-        reason: data.reason,
-        symptoms: data.symptoms,
-        doctor_notes: data.doctor_notes,
-        prescription: data.prescription,
-        created_at: data.created_at,
-      };
-      setAppointment(mapped);
-      setDoctorNotes(mapped.doctor_notes || '');
-      setPrescription(mapped.prescription || '');
-      setSelectedStatus(mapped.status);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to load appointment details.');
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    // ✅ Compare rawStatus (lowercase) and assign uppercase mapped value
+    const rawStatus = (data.status ?? '').toLowerCase();
+    let mappedStatus: AppointmentStatus =
+      rawStatus === 'confirmed' ? 'CONFIRMED' :
+      rawStatus === 'completed' ? 'COMPLETED' :
+      rawStatus === 'cancelled' ? 'CANCELLED' :
+      'PENDING';
 
-  const handleUpdate = async () => {
-    if (!appointment) return;
-    setUpdating(true);
-    try {
-      // Use 'as any' to bypass type check for now (API expects these fields)
-      await appointmentsAPI.updateDoctorAppointment(appointmentId, {
-        status: selectedStatus,
-        doctor_notes: doctorNotes,
-        prescription,
-      } as any);
-      Alert.alert('Success', 'Appointment updated.');
-      navigation.goBack();
-    } catch (error) {
-      Alert.alert('Error', 'Failed to update appointment.');
-      console.error(error);
-    } finally {
-      setUpdating(false);
-    }
-  };
+    const mapped: AppointmentDetail = {
+      id: data.id,
+      patient: data.patient,
+      appointment_date: data.appointment_date,
+      appointment_time: data.appointment_time,
+      status: mappedStatus,   // ✅ Now correctly typed as AppointmentStatus
+      reason: data.reason,
+      symptoms: data.symptoms,
+      doctor_notes: data.doctor_notes,
+      prescription: data.prescription,
+      created_at: data.created_at,
+    };
+
+    setAppointment(mapped);
+    setDoctorNotes(mapped.doctor_notes || '');
+    setPrescription(mapped.prescription || '');
+    setSelectedStatus(mapped.status);
+  } catch (error) {
+    Alert.alert('Error', 'Failed to load appointment details.');
+    console.error(error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+ const handleUpdate = async () => {
+  if (!appointment) return;
+  setUpdating(true);
+  try {
+    await appointmentsAPI.updateDoctorAppointment(appointmentId, {
+      status: selectedStatus.toUpperCase(),
+      doctor_notes: doctorNotes,
+      prescription,
+      appointment_date: appointment.appointment_date,
+      appointment_time: appointment.appointment_time,
+      reason: appointment.reason,
+    } as any);
+    Alert.alert('Success', 'Appointment updated.');
+    navigation.goBack();
+  } catch (error: any) {
+    const msg = error?.response?.data
+      ? JSON.stringify(error.response.data)
+      : 'Failed to update appointment.';
+    Alert.alert('Update Failed', msg);
+    console.error('Update error:', error?.response?.data || error);
+  } finally {
+    setUpdating(false);
+  }
+};
 
   const getStatusColor = (status: AppointmentStatus) => {
     switch (status) {
-      case 'confirmed': return '#16a34a';
-      case 'cancelled': return '#ef4444';
-      case 'completed': return '#6b7280';
+      case 'CONFIRMED': return '#16a34a';
+      case 'CANCELLED': return '#ef4444';
+      case 'COMPLETED': return '#6b7280';
       default: return '#f59e0b'; // pending
     }
   };
@@ -213,7 +218,7 @@ export default function AppointmentDetails() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Update Status</Text>
         <View style={styles.statusButtons}>
-          {(['pending', 'confirmed', 'completed', 'cancelled'] as const).map((status) => (
+          {(['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'] as const).map((status) => (
             <TouchableOpacity
               key={status}
               style={[

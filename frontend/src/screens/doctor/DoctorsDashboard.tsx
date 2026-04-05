@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  Image,
   Alert,
   ScrollView,
 } from 'react-native';
@@ -15,7 +14,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Calendar } from 'react-native-calendars';
 import { format, isToday, parseISO } from 'date-fns';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { appointmentsAPI, doctorsAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -37,7 +36,7 @@ type RootStackParamList = {
   SetAvailability: undefined;
   AppointmentsCalendar: { date?: string };
   DoctorProfile: undefined;
-  DoctorDetails: undefined;            // Added for redirect
+  DoctorDetails: undefined;
 };
 
 type DoctorDashboardNavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -78,14 +77,21 @@ interface MarkedDates {
   };
 }
 
+const extractArray = (data: any): any[] => {
+  if (Array.isArray(data)) return data;
+  if (data?.results && Array.isArray(data.results)) return data.results;
+  if (data?.data && Array.isArray(data.data)) return data.data;
+  if (data?.appointments && Array.isArray(data.appointments)) return data.appointments;
+  console.warn('Unexpected list response format:', data);
+  return [];
+};
+
 export default function DoctorDashboard() {
   const navigation = useNavigation<DoctorDashboardNavigationProp>();
   const { signOut } = useAuth();
 
-  // Profile check state
+  // ✅ ALL useState hooks at the top
   const [isCheckingProfile, setIsCheckingProfile] = useState(true);
-
-  // Dashboard data state
   const [doctor, setDoctor] = useState<any>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -101,64 +107,16 @@ export default function DoctorDashboard() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [activeTab, setActiveTab] = useState<'appointments' | 'patients'>('appointments');
 
-  // 1. Check if doctor profile exists
-  useEffect(() => {
-    const checkProfile = async () => {
-      try {
-        await doctorsAPI.getMyProfile();
-        // Profile exists → proceed to load dashboard data
-        loadUser();
-        fetchDashboardData();
-      } catch (error: any) {
-        if (error.response?.status === 404) {
-          // Profile not found → redirect to completion screen
-          navigation.replace('DoctorDetails');
-        } else {
-          // Other error – still redirect for safety
-          console.error('Error checking profile:', error);
-          navigation.replace('DoctorDetails');
-        }
-      } finally {
-        setIsCheckingProfile(false);
-      }
-    };
-    checkProfile();
-  }, []);
-
-  // 2. Load user data from AsyncStorage (used by the UI)
-  const loadUser = async () => {
+  // ✅ useCallback hooks after useState
+  const fetchDashboardData = useCallback(async () => {
     try {
-      const userStr = await AsyncStorage.getItem('user');
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        setDoctor(user);
-      }
-    } catch (error) {
-      console.error('Failed to load user:', error);
-    }
-  };
-
-  const extractArray = (data: any): any[] => {
-    if (Array.isArray(data)) return data;
-    if (data?.results && Array.isArray(data.results)) return data.results;
-    if (data?.data && Array.isArray(data.data)) return data.data;
-    if (data?.appointments && Array.isArray(data.appointments)) return data.appointments;
-    console.warn('Unexpected list response format:', data);
-    return [];
-  };
-
-  const fetchDashboardData = async () => {
-    try {
-      const [appointmentsResult, profileResult] = await Promise.allSettled([
+      const [appointmentsResult] = await Promise.allSettled([
         appointmentsAPI.getDoctorAppointments(),
-        doctorsAPI.getMyProfile(), // profile already exists, but we call again to get fresh data
+        doctorsAPI.getMyProfile(),
       ]);
 
-      console.log('=== DoctorDashboard Debug ===');
-
       if (appointmentsResult.status === 'fulfilled') {
-        const appointmentsData = appointmentsResult.value;
-        const appointmentsArray = extractArray(appointmentsData) as Appointment[];
+        const appointmentsArray = extractArray(appointmentsResult.value) as Appointment[];
         setAppointments(appointmentsArray);
 
         // Build patient list from appointments
@@ -179,14 +137,12 @@ export default function DoctorDashboard() {
           ...value,
         }));
         setPatients(patientsList);
-        setStats((prev) => ({ ...prev, totalPatients: patientsList.length }));
 
-        // Marked dates
+        // Marked dates for calendar
         const marks: MarkedDates = {};
         appointmentsArray.forEach((apt) => {
-          const dateStr = apt.appointment_date;
-          if (!marks[dateStr]) {
-            marks[dateStr] = {
+          if (!marks[apt.appointment_date]) {
+            marks[apt.appointment_date] = {
               marked: true,
               dotColor: apt.status === 'CANCELLED' ? '#ef4444' : '#16a34a',
             };
@@ -194,6 +150,7 @@ export default function DoctorDashboard() {
         });
         setMarkedDates(marks);
 
+        // Calculate stats
         const today = new Date().toISOString().split('T')[0];
         const todayApps = appointmentsArray.filter(
           (apt) => apt.appointment_date === today && apt.status !== 'CANCELLED'
@@ -201,20 +158,14 @@ export default function DoctorDashboard() {
         const pendingApps = appointmentsArray.filter((apt) => apt.status === 'PENDING').length;
         const completedApps = appointmentsArray.filter((apt) => apt.status === 'COMPLETED').length;
 
-        setStats((prev) => ({
-          ...prev,
+        setStats({
+          totalPatients: patientsList.length,
           todayAppointments: todayApps,
           pendingAppointments: pendingApps,
           completedAppointments: completedApps,
-        }));
+        });
       } else {
         console.log('Appointments fetch failed:', appointmentsResult.reason);
-      }
-
-      if (profileResult.status === 'fulfilled') {
-        console.log('Doctor profile fetched:', profileResult.value);
-      } else {
-        console.log('Profile fetch failed:', profileResult.reason);
       }
     } catch (error) {
       console.error('Unexpected error in fetchDashboardData:', error);
@@ -223,12 +174,45 @@ export default function DoctorDashboard() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchDashboardData();
-  }, []);
+  }, [fetchDashboardData]);
+
+  // ✅ useFocusEffect last — re-fetches every time screen is focused (e.g. coming back from AppointmentDetails)
+  useFocusEffect(
+    useCallback(() => {
+      const checkAndLoad = async () => {
+        try {
+          await doctorsAPI.getMyProfile();
+          const userStr = await AsyncStorage.getItem('user');
+          if (userStr) setDoctor(JSON.parse(userStr));
+          await fetchDashboardData();
+        } catch (error: any) {
+          if (error.response?.status === 404) {
+            navigation.replace('DoctorDetails');
+          } else {
+            console.error('Error checking profile:', error);
+            navigation.replace('DoctorDetails');
+          }
+        } finally {
+          setIsCheckingProfile(false);
+        }
+      };
+      checkAndLoad();
+    }, [fetchDashboardData])
+  );
+
+  // ✅ Conditional returns AFTER all hooks
+  if (isCheckingProfile || (loading && !refreshing)) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#16a34a" />
+      </View>
+    );
+  }
 
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
@@ -271,8 +255,14 @@ export default function DoctorDashboard() {
         onPress={() => navigation.navigate('AppointmentDetails', { appointmentId: item.id })}
       >
         <View style={styles.appointmentTimeContainer}>
-          <Text style={styles.appointmentTime}>{formatAppointmentTime(item.appointment_date, item.appointment_time)}</Text>
-          {isTodayApp && <View style={styles.todayBadge}><Text style={styles.todayBadgeText}>Today</Text></View>}
+          <Text style={styles.appointmentTime}>
+            {formatAppointmentTime(item.appointment_date, item.appointment_time)}
+          </Text>
+          {isTodayApp && (
+            <View style={styles.todayBadge}>
+              <Text style={styles.todayBadgeText}>Today</Text>
+            </View>
+          )}
         </View>
         <View style={styles.appointmentInfo}>
           <Text style={styles.patientName}>{item.patient_name}</Text>
@@ -325,16 +315,9 @@ export default function DoctorDashboard() {
     </View>
   );
 
-  if (isCheckingProfile || (loading && !refreshing)) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#16a34a" />
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View style={styles.headerLeft}>
@@ -369,6 +352,7 @@ export default function DoctorDashboard() {
       >
         {renderStats()}
 
+        {/* Calendar */}
         <View style={styles.calendarSection}>
           <Text style={styles.sectionTitle}>Appointment Calendar</Text>
           <Calendar
@@ -388,6 +372,7 @@ export default function DoctorDashboard() {
           />
         </View>
 
+        {/* Tabs */}
         <View style={styles.tabContainer}>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'appointments' && styles.activeTab]}
@@ -407,6 +392,7 @@ export default function DoctorDashboard() {
           </TouchableOpacity>
         </View>
 
+        {/* Tab Content */}
         {activeTab === 'appointments' ? (
           appointments.length === 0 ? (
             <View style={styles.emptyContainer}>
@@ -439,6 +425,7 @@ export default function DoctorDashboard() {
           />
         )}
 
+        {/* Quick Actions */}
         <View style={styles.quickActions}>
           <TouchableOpacity
             style={styles.actionButton}
@@ -447,14 +434,12 @@ export default function DoctorDashboard() {
             <Icon name="time-outline" size={22} color="#16a34a" />
             <Text style={styles.actionText}>Set Availability</Text>
           </TouchableOpacity>
-          {/* Calendar button commented out */}
         </View>
       </ScrollView>
     </View>
   );
 }
 
-// Styles remain unchanged – keep them as in your original file
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f0fdf4' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
@@ -505,7 +490,13 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  sectionTitle: { fontSize: 18, fontWeight: '600', marginBottom: 10, marginLeft: 5, color: '#14532d' },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 10,
+    marginLeft: 5,
+    color: '#14532d',
+  },
   calendar: { borderRadius: 10, overflow: 'hidden' },
   tabContainer: {
     flexDirection: 'row',
@@ -516,7 +507,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#bbf7d0',
   },
-  tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
   activeTab: { borderBottomColor: '#16a34a' },
   tabText: { fontSize: 16, color: '#4b5563' },
   activeTabText: { color: '#16a34a', fontWeight: '600' },
@@ -536,12 +533,24 @@ const styles = StyleSheet.create({
   },
   appointmentTimeContainer: { width: 70, marginRight: 15 },
   appointmentTime: { fontSize: 16, fontWeight: '600', color: '#14532d' },
-  todayBadge: { backgroundColor: '#16a34a', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2, marginTop: 4, alignSelf: 'flex-start' },
+  todayBadge: {
+    backgroundColor: '#16a34a',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginTop: 4,
+    alignSelf: 'flex-start',
+  },
   todayBadgeText: { color: '#fff', fontSize: 10, fontWeight: '600' },
   appointmentInfo: { flex: 1 },
   patientName: { fontSize: 16, fontWeight: '600', color: '#14532d', marginBottom: 4 },
   reason: { fontSize: 14, color: '#4b5563', marginBottom: 6 },
-  statusBadge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+  statusBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
   status_pending: { backgroundColor: '#fcd34d' },
   status_confirmed: { backgroundColor: '#34d399' },
   status_completed: { backgroundColor: '#9ca3af' },
@@ -558,7 +567,11 @@ const styles = StyleSheet.create({
   patientAvatar: { marginRight: 15 },
   patientInfo: { flex: 1 },
   lastAppointment: { fontSize: 12, color: '#6b7280', marginTop: 4 },
-  emptyContainer: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
   emptyText: { fontSize: 18, fontWeight: '600', color: '#9ca3af', marginTop: 15 },
   emptySubtext: { fontSize: 14, color: '#9ca3af', marginTop: 5 },
   quickActions: {
@@ -582,6 +595,12 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   actionText: { marginLeft: 8, fontSize: 14, fontWeight: '500', color: '#16a34a' },
-  badge: { backgroundColor: '#ef4444', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2, marginLeft: 8 },
+  badge: {
+    backgroundColor: '#ef4444',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginLeft: 8,
+  },
   badgeText: { color: '#fff', fontSize: 12, fontWeight: '600' },
 });
