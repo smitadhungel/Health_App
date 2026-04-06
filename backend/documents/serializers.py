@@ -3,7 +3,7 @@
 # ============================================
 
 from rest_framework import serializers
-from .models import MedicalDocument, DocumentShare, DocumentAccessLog
+from .models import MedicalDocument, DocumentShare, DocumentAccessLog, Prescription, PrescriptionMedication
 from doctor.models import DoctorProfile
 import os
 
@@ -233,3 +233,207 @@ class DocumentListSerializer(serializers.ModelSerializer):
     def get_is_shared(self, obj):
         """Check if document is shared"""
         return obj.shared_with_doctors.exists() or obj.shares.filter(is_active=True).exists()
+    
+
+# ============================================
+# ADD THESE TO documents/serializers.py
+# ============================================
+
+
+
+class PrescriptionMedicationSerializer(serializers.ModelSerializer):
+    """Serializer for individual medications in a prescription"""
+    
+    class Meta:
+        model = PrescriptionMedication
+        fields = [
+            'id', 'medicine_name', 'dosage', 
+            'frequency', 'duration', 'instructions'
+        ]
+
+
+class PrescriptionSerializer(serializers.ModelSerializer):
+    """Full prescription serializer — used for reading"""
+    doctor_name = serializers.CharField(
+        source='doctor.user.get_full_name', read_only=True
+    )
+    doctor_specialization = serializers.CharField(
+        source='doctor.get_specialization_display', read_only=True
+    )
+    patient_name = serializers.CharField(
+        source='patient.get_full_name', read_only=True
+    )
+    patient_email = serializers.EmailField(
+        source='patient.email', read_only=True
+    )
+    status_display = serializers.CharField(
+        source='get_status_display', read_only=True
+    )
+    medications = PrescriptionMedicationSerializer(many=True, read_only=True)
+    related_document_title = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Prescription
+        fields = [
+            'id',
+            'doctor', 'doctor_name', 'doctor_specialization',
+            'patient', 'patient_name', 'patient_email',
+            'related_document', 'related_document_title',
+            'diagnosis', 'notes',
+            'status', 'status_display',
+            'medications',
+            'issued_at', 'viewed_at',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = [
+            'doctor', 'patient', 'status',
+            'issued_at', 'viewed_at',
+            'created_at', 'updated_at',
+        ]
+
+    def get_related_document_title(self, obj):
+        if obj.related_document:
+            return obj.related_document.title
+        return None
+
+
+class CreatePrescriptionMedicationSerializer(serializers.ModelSerializer):
+    """Serializer for creating medications inside a prescription"""
+    
+    class Meta:
+        model = PrescriptionMedication
+        fields = [
+            'medicine_name', 'dosage',
+            'frequency', 'duration', 'instructions'
+        ]
+    
+    def validate_medicine_name(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("Medicine name cannot be empty.")
+        return value
+
+
+class CreatePrescriptionSerializer(serializers.ModelSerializer):
+    """Serializer for doctor creating a prescription"""
+    medications = CreatePrescriptionMedicationSerializer(many=True)
+
+    class Meta:
+        model = Prescription
+        fields = [
+            'patient',
+            'related_document',
+            'diagnosis',
+            'notes',
+            'medications',
+        ]
+    
+    def validate_medications(self, value):
+        if not value:
+            raise serializers.ValidationError(
+                "At least one medication is required."
+            )
+        return value
+
+    def validate_patient(self, value):
+        if value.role != 'PATIENT':
+            raise serializers.ValidationError(
+                "Prescription can only be issued to a patient."
+            )
+        return value
+
+    def create(self, validated_data):
+        medications_data = validated_data.pop('medications')
+        
+        # Create the prescription
+        prescription = Prescription.objects.create(**validated_data)
+        
+        # Create each medication linked to this prescription
+        for med_data in medications_data:
+            PrescriptionMedication.objects.create(
+                prescription=prescription,
+                **med_data
+            )
+        
+        return prescription
+
+
+class UpdatePrescriptionSerializer(serializers.ModelSerializer):
+    """Serializer for doctor updating a draft prescription"""
+    medications = CreatePrescriptionMedicationSerializer(many=True, required=False)
+
+    class Meta:
+        model = Prescription
+        fields = ['diagnosis', 'notes', 'medications']
+
+    def update(self, instance, validated_data):
+        medications_data = validated_data.pop('medications', None)
+        
+        # Update prescription fields
+        instance.diagnosis = validated_data.get('diagnosis', instance.diagnosis)
+        instance.notes = validated_data.get('notes', instance.notes)
+        instance.save()
+        
+        # If medications provided, replace all existing ones
+        if medications_data is not None:
+            instance.medications.all().delete()
+            for med_data in medications_data:
+                PrescriptionMedication.objects.create(
+                    prescription=instance,
+                    **med_data
+                )
+        
+        return instance
+
+
+class PrescriptionListSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for listing prescriptions"""
+    doctor_name = serializers.CharField(
+        source='doctor.user.get_full_name', read_only=True
+    )
+    doctor_specialization = serializers.CharField(
+        source='doctor.get_specialization_display', read_only=True
+    )
+    patient_name = serializers.CharField(
+        source='patient.get_full_name', read_only=True
+    )
+    status_display = serializers.CharField(
+        source='get_status_display', read_only=True
+    )
+    medication_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Prescription
+        fields = [
+            'id',
+            'doctor_name', 'doctor_specialization',
+            'patient_name',
+            'diagnosis',
+            'status', 'status_display',
+            'medication_count',
+            'issued_at', 'created_at',
+        ]
+    
+    def get_medication_count(self, obj):
+        return obj.medications.count()
+    
+
+
+class DoctorSharedDocumentSerializer(serializers.ModelSerializer):
+    patient_name = serializers.CharField(source='patient.get_full_name', read_only=True)
+    patient_id   = serializers.IntegerField(source='patient.id', read_only=True)
+    category_display = serializers.CharField(source='get_category_display', read_only=True)
+    file_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MedicalDocument
+        fields = [
+            'id', 'title', 'category', 'category_display',
+            'file_extension', 'file_size', 'document_date',
+            'created_at', 'patient_name', 'patient_id', 'file_url',
+        ]
+
+    def get_file_url(self, obj):
+        request = self.context.get('request')
+        if obj.file and request:
+            return request.build_absolute_uri(obj.file.url)
+        return None

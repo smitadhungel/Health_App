@@ -14,8 +14,14 @@ import DocumentDetailsScreen from '../screens/patient/DocumentDetailsScreen';
 
 import DoctorRegistrationScreen from '../screens/doctor/DoctorRegistrationScreen';
 
-import TestScreen from '../screens/test';
+import TestScreen from '../screens/landing';
 import NearbyPlacesScreen from '../screens/patient/NearbyPlacesScreen';
+
+import PrescriptionDetailScreen from '../screens/patient/PrescriptionDetailScreen';
+import PrescriptionsScreen from '../screens/patient/PrescriptionsScreen';
+// import PrescriptionsScreen from '../screens/patient/PrescriptionsScreen';
+// import PrescriptionDetailScreen from '../screens/patient/PrescriptionDetailScreen';
+
 const Stack = createNativeStackNavigator<PatientStackParamList>();
 
 export default function PatientStack() {
@@ -93,6 +99,9 @@ export default function PatientStack() {
         options={{ headerShown: false }}
       />
 
+      <Stack.Screen name="Prescriptions" component={PrescriptionsScreen} options={{ title: 'My Prescriptions' }} />
+
+      <Stack.Screen name="PrescriptionDetail" component={PrescriptionDetailScreen} options={{ title: 'Prescription Detail' }} />
       {/* <Stack.Screen name="PatientHome" component={TestScreen} />  */}
       {/* <Stack.Screen name="Medications" component={TestScreen} /> */}
     </Stack.Navigator>

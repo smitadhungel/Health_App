@@ -38,7 +38,27 @@ class DoctorProfile(models.Model):
     total_patients = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    # Add this to DoctorProfile model
+    VERIFICATION_STATUS_CHOICES = [
+    ('PENDING', 'Pending Review'),
+    ('APPROVED', 'Approved'),
+    ('REJECTED', 'Rejected'),
+    ]
 
+    verification_status = models.CharField(
+    max_length=20,
+    choices=VERIFICATION_STATUS_CHOICES,
+    default='PENDING'
+)
+    rejection_reason = models.TextField(blank=True, help_text="Reason for rejection")
+    verified_at = models.DateTimeField(null=True, blank=True)
+    verified_by = models.ForeignKey(
+    settings.AUTH_USER_MODEL,
+    on_delete=models.SET_NULL,
+    null=True, blank=True,
+    related_name='verified_doctors',
+    limit_choices_to={'role': 'ADMIN'}
+    )
     class Meta:
         db_table = 'doctor_profiles'
         ordering = ['-rating', '-experience_years']
@@ -46,6 +66,9 @@ class DoctorProfile(models.Model):
             models.Index(fields=['specialization']),
             models.Index(fields=['is_available']),
         ]
+    @property
+    def is_verified(self):
+        return self.verification_status == 'APPROVED'
     
     def __str__(self):
         return f"Dr. {self.user.get_full_name()} - {self.get_specialization_display()}"

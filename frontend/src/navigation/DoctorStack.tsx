@@ -8,6 +8,11 @@ import PatientDetails from '../screens/doctor/PatientDetails';
 import { DoctorStackParamList } from './types';
 import AppointmentDetails from '../screens/doctor/AppointmentDetails';
 
+import SharedDocumentsScreen from '../screens/doctor/SharedDocumentsScreen';
+import WritePrescriptionScreen from '../screens/doctor/WritePrescriptionScreen';
+import DoctorPrescriptionsScreen from '../screens/doctor/DoctorPrescriptionsScreen';
+import PrescriptionDetailScreen from '../screens/doctor/PrescriptionDetailScreen';
+
 const Stack = createNativeStackNavigator<DoctorStackParamList>();
 
 export default function DoctorStack() {
@@ -46,6 +51,11 @@ export default function DoctorStack() {
         component={AppointmentDetails} 
         options={{ headerShown: false}}
       />
+
+      <Stack.Screen name="SharedDocuments" component={SharedDocumentsScreen} options={{ title: 'Patient Documents' }} />
+      <Stack.Screen name="WritePrescription" component={WritePrescriptionScreen} options={{ title: 'Write Prescription' }} />
+      <Stack.Screen name="DoctorPrescriptions" component={DoctorPrescriptionsScreen} options={{ title: 'My Prescriptions' }} />
+      <Stack.Screen name="PrescriptionDetail" component={PrescriptionDetailScreen} options={{ title: 'Prescription Detail' }} />
 
     </Stack.Navigator>
   );

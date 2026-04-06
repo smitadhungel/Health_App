@@ -10,7 +10,7 @@ from django.db.models import Q
 from django.utils import timezone
 from datetime import timedelta
 import secrets
-from .models import MedicalDocument, DocumentShare, DocumentAccessLog
+from .models import MedicalDocument, DocumentShare, DocumentAccessLog,Prescription, PrescriptionMedication
 from doctor.models import DoctorProfile
 from .serializers import (
     MedicalDocumentSerializer,
@@ -20,11 +20,14 @@ from .serializers import (
     ShareWithDoctorSerializer,
     DocumentListSerializer,
     DocumentShareSerializer,
-    DocumentAccessLogSerializer
+    DocumentAccessLogSerializer, PrescriptionSerializer,
+    PrescriptionListSerializer,
+    CreatePrescriptionSerializer,
+    UpdatePrescriptionSerializer,
+    DoctorSharedDocumentSerializer,
 )
 from .permissions import IsPatient, IsDoctor, IsDocumentOwner
-
-
+from doctor.permissions import IsDoctor, IsPatient
 # ============================================
 # HELPER FUNCTION
 # ============================================
@@ -285,8 +288,8 @@ class ShareWithDoctorView(APIView):
         
         # Add doctors to shared list
         document.shared_with_doctors.add(*doctors)
-        document.is_shared_with_doctor = True
-        document.save()
+        # document.is_shared_with_doctor = True
+        # document.save()
         
         # Log the share
         log_document_access(document, request.user, 'SHARE', request)
@@ -334,9 +337,9 @@ class UnshareWithDoctorView(APIView):
         document.shared_with_doctors.remove(*doctors)
         
         # Update shared status
-        if not document.shared_with_doctors.exists():
-            document.is_shared_with_doctor = False
-            document.save()
+        # if not document.shared_with_doctors.exists():
+        #     document.is_shared_with_doctor = False
+        #     document.save()
         
         return Response({
             'message': f'Sharing removed for {doctors.count()} doctor(s)'
@@ -349,7 +352,7 @@ class UnshareWithDoctorView(APIView):
 
 class DoctorSharedDocumentsView(generics.ListAPIView):
     """List documents shared with the current doctor"""
-    serializer_class = DocumentListSerializer
+    serializer_class = DoctorSharedDocumentSerializer
     permission_classes = [IsDoctor]
     
     def get_queryset(self):
@@ -467,4 +470,139 @@ class DocumentAccessLogsView(generics.ListAPIView):
         return Response({
             'count': queryset.count(),
             'logs': serializer.data
+        })
+    
+
+
+# ============================================
+# PRESCRIPTION VIEWS — add to documents/views.py
+# ============================================
+
+# from .models import (
+#     MedicalDocument, DocumentShare, DocumentAccessLog,
+#     Prescription, PrescriptionMedication
+# )
+# from .serializers import (
+#     # ... your existing serializer imports ...
+#     PrescriptionSerializer,
+#     PrescriptionListSerializer,
+#     CreatePrescriptionSerializer,
+#     UpdatePrescriptionSerializer,
+# )
+
+
+class CreatePrescriptionView(generics.CreateAPIView):
+    """Doctor creates a prescription for a patient"""
+    serializer_class = CreatePrescriptionSerializer
+    permission_classes = [IsDoctor]
+
+    def perform_create(self, serializer):
+        serializer.save(
+            doctor=self.request.user.doctor_profile,
+            status='ISSUED',
+            issued_at=timezone.now()
+        )
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response({
+            'message': 'Prescription issued successfully',
+            'prescription': PrescriptionSerializer(serializer.instance).data
+        }, status=status.HTTP_201_CREATED)
+
+
+class PatientPrescriptionsView(generics.ListAPIView):
+    """Patient views all their prescriptions"""
+    serializer_class = PrescriptionListSerializer
+    permission_classes = [IsPatient]
+
+    def get_queryset(self):
+        return Prescription.objects.filter(
+            patient=self.request.user
+        ).select_related('doctor__user', 'related_document').prefetch_related('medications')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        # Mark ISSUED ones as VIEWED
+        queryset.filter(status='ISSUED').update(
+            status='VIEWED',
+            viewed_at=timezone.now()
+        )
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            'count': queryset.count(),
+            'prescriptions': serializer.data
+        })
+
+
+class DoctorPrescriptionsView(generics.ListAPIView):
+    """Doctor views prescriptions they have issued"""
+    serializer_class = PrescriptionListSerializer
+    permission_classes = [IsDoctor]
+
+    def get_queryset(self):
+        if not hasattr(self.request.user, 'doctor_profile'):
+            return Prescription.objects.none()
+        return Prescription.objects.filter(
+            doctor=self.request.user.doctor_profile
+        ).select_related('patient').prefetch_related('medications')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            'count': queryset.count(),
+            'prescriptions': serializer.data
+        })
+
+
+class PrescriptionDetailView(generics.RetrieveAPIView):
+    """Get full details of a single prescription"""
+    serializer_class = PrescriptionSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'id'
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'PATIENT':
+            return Prescription.objects.filter(patient=user)
+        elif user.role == 'DOCTOR' and hasattr(user, 'doctor_profile'):
+            return Prescription.objects.filter(doctor=user.doctor_profile)
+        return Prescription.objects.none()
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        # Mark as viewed if patient is reading it
+        if request.user.role == 'PATIENT' and instance.status == 'ISSUED':
+            instance.status = 'VIEWED'
+            instance.viewed_at = timezone.now()
+            instance.save()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+
+class UpdatePrescriptionView(generics.UpdateAPIView):
+    """Doctor updates a prescription (only DRAFT or ISSUED)"""
+    serializer_class = UpdatePrescriptionSerializer
+    permission_classes = [IsDoctor]
+    lookup_field = 'id'
+
+    def get_queryset(self):
+        if not hasattr(self.request.user, 'doctor_profile'):
+            return Prescription.objects.none()
+        return Prescription.objects.filter(
+            doctor=self.request.user.doctor_profile,
+            status__in=['DRAFT', 'ISSUED']
+        )
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response({
+            'message': 'Prescription updated successfully',
+            'prescription': PrescriptionSerializer(instance).data
         })

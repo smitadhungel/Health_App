@@ -22,7 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const loadAuth = async () => {
       try {
         const token = await AsyncStorage.getItem('access_token');
-        const role = await AsyncStorage.getItem('user_role');
+        const role  = await AsyncStorage.getItem('user_role');
         setUserToken(token);
         setUserRole(role);
       } catch (error) {
@@ -35,27 +35,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signIn = async (token: string, refreshToken: string, user: any) => {
-  await AsyncStorage.setItem('access_token', token);
-  await AsyncStorage.setItem('refresh_token', refreshToken);
-  await AsyncStorage.setItem('user', JSON.stringify(user));
+    await AsyncStorage.setItem('access_token', token);
+    await AsyncStorage.setItem('refresh_token', refreshToken);
+    await AsyncStorage.setItem('user', JSON.stringify(user));
 
-  // Determine role from available fields
-  let role = user.role || user.user_type;
-  if (!role && user.role_display) {
-    // Map display to uppercase internal role
-    role = user.role_display === 'Patient' ? 'PATIENT' :
-           user.role_display === 'Doctor' ? 'DOCTOR' : null;
-  }
+    // Determine role from available fields
+    let role = user.role || user.user_type;
+    if (!role && user.role_display) {
+      role =
+        user.role_display === 'Patient' ? 'PATIENT' :
+        user.role_display === 'Doctor'  ? 'DOCTOR'  :
+        user.role_display === 'Admin'   ? 'ADMIN'   : null; // ← added ADMIN
+    }
 
-  if (role) {
-    await AsyncStorage.setItem('user_role', role);
-  } else {
-    console.warn('Could not determine user role from:', user);
-  }
+    if (role) {
+      await AsyncStorage.setItem('user_role', role);
+    } else {
+      console.warn('Could not determine user role from:', user);
+    }
 
-  setUserToken(token);
-  setUserRole(role);
-};
+    setUserToken(token);
+    setUserRole(role);
+  };
+
   const signOut = async () => {
     await AsyncStorage.multiRemove(['access_token', 'refresh_token', 'user', 'user_role']);
     setUserToken(null);

@@ -1,8 +1,7 @@
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-
 export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
+  Landing:undefined;
 };
 
 export type PatientStackParamList = {
@@ -14,22 +13,39 @@ export type PatientStackParamList = {
   RequestRefill: { medicationId: number; medicationName: string };
   BookAppointment: undefined;
   UploadDocument: undefined;
-  Documents:undefined;
+  Documents: undefined;
   DocumentDetails: { documentId: number };
   MyAppointments: undefined;
   DoctorRegistration: undefined;
-  PlaceDetails:undefined;
+  PlaceDetails: undefined;
+  Prescriptions: undefined;
+  PrescriptionDetail: { prescriptionId: number };
 };
-
 
 export type DoctorStackParamList = {
   DoctorsDashboard: undefined;
-  AppointmentDetails: { appointmentId: number };   // <-- add this
+  AppointmentDetails: { appointmentId: number };
   DoctorDetails: { doctorId: number } | undefined;
   SetAvailability: undefined;
   AppointmentsCalendar: { date?: string };
   PatientDetails: { patientId: number };
+  SharedDocuments: undefined;
+  WritePrescription: {
+    patientId: number;
+    patientName: string;
+    documentId?: number;
+    documentTitle?: string;
+  };
+  DoctorPrescriptions: undefined;
+  PrescriptionDetail: { prescriptionId: number };
 };
 
-// You can also define a combined type if needed
-export type RootStackParamList = AuthStackParamList & PatientStackParamList & DoctorStackParamList;
+export type AdminStackParamList = {
+  AdminDashboard: undefined;
+  PendingDoctors: undefined;
+};
+
+export type RootStackParamList = AuthStackParamList &
+  PatientStackParamList &
+  DoctorStackParamList &
+  AdminStackParamList;

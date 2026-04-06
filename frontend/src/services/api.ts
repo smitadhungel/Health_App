@@ -421,10 +421,11 @@ export const documentsAPI = {
   },
 
   // Get documents shared with doctor
-  getSharedWithDoctor: async (): Promise<Document[]> => {
-    const response = await api.get('/documents/doctor/shared-documents/');
-    return response.data;
-  },
+  // In documentsAPI inside api.ts — update getSharedWithDoctor
+getSharedWithDoctor: async (): Promise<any> => {
+  const response = await api.get('/documents/doctor/shared-documents/');
+  return response.data;
+},
 
   // Get document via public token
   getByToken: async (token: string): Promise<Document> => {
@@ -581,4 +582,76 @@ export const patientsAPI = {
 // EXPORT
 // ============================================
 
+
+// ============================================
+// PRESCRIPTIONS API
+// ============================================
+
+export const prescriptionsAPI = {
+  // Doctor creates prescription
+  create: async (data: {
+    patient: number;
+    related_document?: number;
+    diagnosis: string;
+    notes?: string;
+    medications: {
+      medicine_name: string;
+      dosage: string;
+      frequency: string;
+      duration: string;
+      instructions?: string;
+    }[];
+  }): Promise<any> => {
+    const response = await api.post('/documents/prescriptions/create/', data);
+    return response.data;
+  },
+
+  // Patient gets their prescriptions
+  getMyPrescriptions: async (): Promise<any> => {
+    const response = await api.get('/documents/prescriptions/my/');
+    return response.data;
+  },
+
+  // Doctor gets prescriptions they issued
+  getDoctorPrescriptions: async (): Promise<any> => {
+    const response = await api.get('/documents/prescriptions/doctor/');
+    return response.data;
+  },
+
+  // Get single prescription detail
+  getDetail: async (prescriptionId: number): Promise<any> => {
+    const response = await api.get(`/documents/prescriptions/${prescriptionId}/`);
+    return response.data;
+  },
+
+  // Doctor updates prescription
+  update: async (prescriptionId: number, data: any): Promise<any> => {
+    const response = await api.patch(`/documents/prescriptions/${prescriptionId}/update/`, data);
+    return response.data;
+  },
+};
+
+// Doctor admin verification API
+
+export const adminAPI = {
+  getPendingDoctors: async (): Promise<any> => {
+    const response = await api.get('/doctors/admin/pending/');
+    return response.data;
+  },
+
+  approveDoctor: async (doctorId: number): Promise<any> => {
+    const response = await api.post(`/doctors/${doctorId}/verify/`, {
+      action: 'APPROVE'
+    });
+    return response.data;
+  },
+
+  rejectDoctor: async (doctorId: number, reason: string): Promise<any> => {
+    const response = await api.post(`/doctors/${doctorId}/verify/`, {
+      action: 'REJECT',
+      reason
+    });
+    return response.data;
+  },
+};
 export default api;

@@ -120,8 +120,9 @@ class DoctorListView(generics.ListAPIView):
         
         # Filter by verified status
         verified_only = self.request.query_params.get('verified', 'false')
-        if verified_only.lower() == 'true':
-            queryset = queryset.filter(is_verified=True)
+        # if verified_only.lower() == 'true':
+        #     queryset = queryset.filter(is_verified=True)
+        queryset = queryset.filter(verification_status='APPROVED')
         
         # Search by name
         search = self.request.query_params.get('search')
@@ -287,3 +288,58 @@ class AddReviewView(generics.CreateAPIView):
             'message': 'Review added successfully',
             'review': serializer.data
         }, status=status.HTTP_201_CREATED)
+
+
+# Add to doctors/views.py
+from rest_framework.permissions import IsAdminUser
+from django.utils import timezone
+
+class VerifyDoctorView(APIView):
+    """Admin verifies or rejects a doctor"""
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, doctor_id):
+        try:
+            doctor = DoctorProfile.objects.get(id=doctor_id)
+        except DoctorProfile.DoesNotExist:
+            return Response({'error': 'Doctor not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        action = request.data.get('action')  # 'APPROVE' or 'REJECT'
+        reason = request.data.get('reason', '')
+
+        if action == 'APPROVE':
+            doctor.verification_status = 'APPROVED'
+            doctor.verified_at = timezone.now()
+            doctor.verified_by = request.user
+            doctor.rejection_reason = ''
+            doctor.save()
+            return Response({'message': 'Doctor approved successfully'})
+
+        elif action == 'REJECT':
+            doctor.verification_status = 'REJECTED'
+            doctor.rejection_reason = reason
+            doctor.save()
+            return Response({'message': 'Doctor rejected'})
+
+        return Response({'error': 'Invalid action. Use APPROVE or REJECT'}, status=status.HTTP_400_BAD_REQUEST)
+    
+# Add this to doctors/views.py
+from rest_framework.permissions import IsAdminUser
+
+class AdminPendingDoctorsView(generics.ListAPIView):
+    """Admin gets all pending doctors"""
+    serializer_class = DoctorListSerializer
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        return DoctorProfile.objects.select_related('user').filter(
+            verification_status='PENDING'
+        )
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            'count': queryset.count(),
+            'doctors': serializer.data
+        })

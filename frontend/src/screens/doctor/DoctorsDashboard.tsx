@@ -37,6 +37,9 @@ type RootStackParamList = {
   AppointmentsCalendar: { date?: string };
   DoctorProfile: undefined;
   DoctorDetails: undefined;
+  SharedDocuments:undefined;
+  DoctorPrescriptions:undefined;
+  
 };
 
 type DoctorDashboardNavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -426,15 +429,32 @@ export default function DoctorDashboard() {
         )}
 
         {/* Quick Actions */}
-        <View style={styles.quickActions}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('SetAvailability')}
-          >
-            <Icon name="time-outline" size={22} color="#16a34a" />
-            <Text style={styles.actionText}>Set Availability</Text>
-          </TouchableOpacity>
-        </View>
+       {/* Quick Actions — replace existing quickActions View */}
+<View style={styles.quickActions}>
+  <TouchableOpacity
+    style={styles.actionButton}
+    onPress={() => navigation.navigate('SetAvailability')}
+  >
+    <Icon name="time-outline" size={20} color="#16a34a" />
+    <Text style={styles.actionText}>Availability</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    style={styles.actionButton}
+    onPress={() => navigation.navigate('SharedDocuments')}
+  >
+    <Icon name="document-text-outline" size={20} color="#16a34a" />
+    <Text style={[styles.actionText, { color: '#16a34a' }]}>Patient Docs</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    style={styles.actionButton}
+    onPress={() => navigation.navigate('DoctorPrescriptions')}
+  >
+    <Icon name="clipboard-outline" size={20} color="#16a34a" />
+    <Text style={[styles.actionText, { color: '#16a34a' }]}>Prescriptions</Text>
+  </TouchableOpacity>
+</View>
       </ScrollView>
     </View>
   );
@@ -575,26 +595,36 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 18, fontWeight: '600', color: '#9ca3af', marginTop: 15 },
   emptySubtext: { fontSize: 14, color: '#9ca3af', marginTop: 5 },
   quickActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    marginTop: 10,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    shadowColor: '#14532d',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  actionText: { marginLeft: 8, fontSize: 14, fontWeight: '500', color: '#16a34a' },
+  flexDirection: 'row',
+  flexWrap: 'wrap', // Allows wrapping if screen is too narrow
+  justifyContent: 'center', // Centers the buttons
+  gap: 10, // Modern way to handle spacing between items
+  paddingVertical: 20,
+  paddingHorizontal: 10,
+},
+actionButton: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: '#fff',
+  paddingVertical: 10,
+  paddingHorizontal: 12, // Reduced horizontal padding
+  borderRadius: 20, // Slightly less rounded for a tighter look
+  minWidth: '30%', // Ensures they take up equal-ish space
+  justifyContent: 'center',
+  shadowColor: '#14532d',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 3,
+  borderWidth: 1,
+  borderColor: '#bbf7d0',
+},
+actionText: { 
+  marginLeft: 6, 
+  fontSize: 12, // Reduced font size slightly
+  fontWeight: '600', 
+  color: '#14532d' 
+},
   badge: {
     backgroundColor: '#ef4444',
     borderRadius: 10,

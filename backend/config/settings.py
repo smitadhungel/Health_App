@@ -17,7 +17,7 @@ GOOGLE_PLACES_API_KEY = 'AIzaSyD6soD8XDgZbS1a6QBVEHmVlsDjkNcXMKs'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['0.0.0.0', '127.0.0.1', 'localhost']
 
 AUTH_USER_MODEL = 'users.User'
 

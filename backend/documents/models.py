@@ -220,3 +220,64 @@ class AppointmentDocument(models.Model):
     
     def __str__(self):
             return f"{self.document.title} for appointment #{self.appointment.id}"
+    
+
+class Prescription(models.Model):
+    STATUS_CHOICES = [
+        ('DRAFT', 'Draft'),
+        ('ISSUED', 'Issued'),
+        ('VIEWED', 'Viewed by Patient'),
+    ]
+
+    doctor = models.ForeignKey(
+        DoctorProfile,
+        on_delete=models.CASCADE,
+        related_name='prescriptions'
+    )
+    patient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='prescriptions',
+        limit_choices_to={'role': 'PATIENT'}
+    )
+    # Optional: link to the report that triggered this prescription
+    related_document = models.ForeignKey(
+        MedicalDocument,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='prescriptions'
+    )
+    
+    diagnosis = models.TextField()
+    notes = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DRAFT')
+    issued_at = models.DateTimeField(null=True, blank=True)
+    viewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'prescriptions'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Rx: {self.doctor} → {self.patient.get_full_name()}"
+
+
+class PrescriptionMedication(models.Model):
+    prescription = models.ForeignKey(
+        Prescription,
+        on_delete=models.CASCADE,
+        related_name='medications'
+    )
+    medicine_name = models.CharField(max_length=200)
+    dosage = models.CharField(max_length=100, help_text="e.g. 500mg")
+    frequency = models.CharField(max_length=100, help_text="e.g. Twice daily")
+    duration = models.CharField(max_length=100, help_text="e.g. 7 days")
+    instructions = models.TextField(blank=True, help_text="e.g. Take after food")
+
+    class Meta:
+        db_table = 'prescription_medications'
+
+    def __str__(self):
+        return f"{self.medicine_name} - {self.dosage}"

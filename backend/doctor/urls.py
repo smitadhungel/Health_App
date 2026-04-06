@@ -20,4 +20,9 @@ urlpatterns = [
     
     # Reviews
     path('<int:doctor_id>/review/', views.AddReviewView.as_view(), name='add-review'),
+
+    path('<int:doctor_id>/verify/', views.VerifyDoctorView.as_view(), name='verify-doctor'),
+
+    path('admin/pending/', views.AdminPendingDoctorsView.as_view(), name='admin-pending-doctors'),
+path('<int:doctor_id>/verify/', views.VerifyDoctorView.as_view(), name='verify-doctor'),
 ]
