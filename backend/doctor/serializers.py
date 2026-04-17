@@ -81,7 +81,7 @@ class CreateDoctorProfileSerializer(serializers.ModelSerializer):
         model = DoctorProfile
         fields = [
             'specialization', 'license_number', 'qualification',
-            'experience_years', 'consultation_fee', 'bio', 'clinic_address'
+            'experience_years', 'consultation_fee', 'bio', 'clinic_address','profile_photo', 'license_photo',
         ]
     
     def validate_license_number(self, value):

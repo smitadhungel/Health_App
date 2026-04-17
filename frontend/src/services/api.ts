@@ -14,6 +14,7 @@ import {
 } from './types';
 
 
+// const BASE_URL = 'http://192.168.254.255:8000/api';
    const BASE_URL = 'http://192.168.100.9:8000/api';
   // const BASE_URL = 'http://192.168.10.175:8000/api';
   // const BASE_URL = 'http://192.168.1.74:8000/api';
@@ -199,6 +200,10 @@ export const doctorsAPI = {
     return response.data;
   },
 
+  createProfileFormData: (formData: FormData) =>
+  api.post('/doctors/profile/create/', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }).then(r => r.data),
   // List all doctors
   list: async (params?: {
     specialization?: string;

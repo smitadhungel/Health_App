@@ -44,7 +44,12 @@ class DoctorProfile(models.Model):
     ('APPROVED', 'Approved'),
     ('REJECTED', 'Rejected'),
     ]
-
+    profile_photo = models.ImageField(
+    upload_to='doctor_photos/', null=True, blank=True
+)
+    license_photo = models.ImageField(
+    upload_to='doctor_licenses/', null=True, blank=True
+)
     verification_status = models.CharField(
     max_length=20,
     choices=VERIFICATION_STATUS_CHOICES,

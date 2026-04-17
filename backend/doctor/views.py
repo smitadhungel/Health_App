@@ -12,8 +12,7 @@ from .serializers import (
     DoctorReviewSerializer
 )
 from .permissions import IsDoctor, IsPatient, IsDoctorOwner
-
-
+from rest_framework.parsers import MultiPartParser, FormParser
 # ============================================
 # DOCTOR PROFILE VIEWS
 # ============================================
@@ -22,6 +21,7 @@ class CreateDoctorProfileView(generics.CreateAPIView):
     """Create doctor profile (only for users with DOCTOR role)"""
     serializer_class = CreateDoctorProfileSerializer
     permission_classes = [IsDoctor]
+    parser_classes = [MultiPartParser, FormParser] 
     
     def perform_create(self, serializer):
         # Check if profile already exists

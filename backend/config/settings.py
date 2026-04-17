@@ -17,7 +17,7 @@ GOOGLE_PLACES_API_KEY = 'AIzaSyD6soD8XDgZbS1a6QBVEHmVlsDjkNcXMKs'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['0.0.0.0', '127.0.0.1', 'localhost']
+# ALLOWED_HOSTS = ['0.0.0.0', '127.0.0.1', 'localhost']
 
 AUTH_USER_MODEL = 'users.User'
 
@@ -54,7 +54,7 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'config.urls'
 
 CORS_ALLOW_ALL_ORIGINS = True
-ALLOWED_HOSTS = ['192.168.1.5', '127.0.0.1', '192.168.100.9','192.168.1.74']
+ALLOWED_HOSTS = ['192.168.1.5', '127.0.0.1', '192.168.100.9','192.168.1.74','0.0.0.0','192.168.254.255']
 CORS_ALLOW_CREDENTIALS = True
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

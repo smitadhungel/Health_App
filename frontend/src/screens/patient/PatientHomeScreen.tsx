@@ -105,8 +105,7 @@ export default function PatientHomeScreen() {
     <ScrollView contentContainerStyle={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.greeting}>Welcome back,</Text>
-        <Text style={styles.name}>{user?.first_name || 'Patient'} 👋</Text>
+        <Text style={styles.name}>{user?.first_name || 'Patient'}</Text>
         <Text style={styles.subtitle}>Manage your health in one place</Text>
       </View>
 
