@@ -268,13 +268,22 @@ export const appointmentsAPI = {
   },
 
   // Get my appointments
+  // getMyAppointments: async (params?: {
+  //   status?: string;
+  //   filter?: 'upcoming' | 'past' | 'all';
+  // }): Promise<Appointment[]> => {
+  //   const response = await api.get('/appointments/my-appointments/', { params });
+  //   return response.data;
+  // },
   getMyAppointments: async (params?: {
-    status?: string;
-    filter?: 'upcoming' | 'past' | 'all';
-  }): Promise<Appointment[]> => {
-    const response = await api.get('/appointments/my-appointments/', { params });
-    return response.data;
-  },
+  status?: string;
+  filter?: 'upcoming' | 'past' | 'all';
+}): Promise<Appointment[]> => {
+  const response = await api.get('/appointments/my-appointments/', { params });
+  const data = response.data;
+  // ✅ Your backend returns { count, appointments: [...] }
+  return Array.isArray(data) ? data : data.appointments ?? [];
+},
 
   // Get appointment details
   getDetails: async (appointmentId: number): Promise<Appointment> => {
@@ -303,15 +312,16 @@ export const appointmentsAPI = {
     return response.data;
   },
 
-  // Get doctor's appointments
-  getDoctorAppointments: async (params?: {
-    status?: string;
-    date?: string;
-  }): Promise<Appointment[]> => {
-    const response = await api.get('/appointments/doctor/appointments/', { params });
-    return response.data;
-  },
 
+  getDoctorAppointments: async (params?: {
+  status?: string;
+  date?: string;
+}): Promise<Appointment[]> => {
+  const response = await api.get('/appointments/doctor/appointments/', { params });
+  const data = response.data;
+  // ✅ Same backend pattern
+  return Array.isArray(data) ? data : data.appointments ?? [];
+},
   // Update appointment status (doctor)
   updateDoctorAppointment: async (appointmentId: number, updateData: Partial<Appointment>): Promise<Appointment> => {
     const response = await api.put(`/appointments/doctor/${appointmentId}/update/`, updateData);
@@ -461,14 +471,24 @@ export const medicationsAPI = {
   },
 
   // Get my medications
-  getMyMedications: async (params?: {
-    active?: boolean;
-    expired?: boolean;
-    refill?: boolean;
-  }): Promise<Medication[]> => {
-    const response = await api.get('/medications/my-medications/', { params });
-    return response.data;
-  },
+ // Replace your existing getMyMedications in api.ts with this:
+
+getMyMedications: async (params?: {
+  active?: boolean;
+  expired?: boolean;
+  refill?: boolean;
+}): Promise<Medication[]> => {
+  // ✅ Always request only active, non-expired meds unless caller says otherwise
+  const queryParams = {
+    active: true,
+    expired: false,
+    ...params,
+  };
+  const response = await api.get('/medications/my-medications/', { params: queryParams });
+  const data = response.data;
+  // ✅ Unwrap { count, medications: [...] } shape from backend
+  return Array.isArray(data) ? data : data.medications ?? [];
+},
 
   // Get medication details
   getDetails: async (medicationId: number): Promise<Medication> => {

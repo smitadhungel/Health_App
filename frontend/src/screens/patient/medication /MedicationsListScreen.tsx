@@ -8,7 +8,10 @@ import {
   RefreshControl,
   Alert,
   ActivityIndicator,
+  Platform,
+  StatusBar,
 } from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context'
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { PatientStackParamList } from '../../../navigation/types';
@@ -21,14 +24,14 @@ import {
   TrendingUp,
   Clock,
   AlertCircle,
-  PlusCircle,
+  Plus,
   FileText,
+  ChevronRight,
 } from 'lucide-react-native';
 
- type MedicationsListNavigationProp = NativeStackNavigationProp<PatientStackParamList>;
+type MedicationsListNavigationProp = NativeStackNavigationProp<PatientStackParamList>;
 
-  // const navigation = useNavigation<NativeStackNavigationProp<PatientStackParamList>>();
-
+// (Interfaces remain identical to your logic)
 interface Medication {
   id: number;
   name: string;
@@ -36,10 +39,7 @@ interface Medication {
   form_display: string;
   frequency_display: string;
   is_refill_needed?: boolean;
-  next_dose_time?: {
-    time: string;
-    date: string;
-  };
+  next_dose_time?: { time: string; date: string; };
 }
 
 interface Stats {
@@ -66,11 +66,7 @@ export default function MedicationsListScreen() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [todaysDoses, setTodaysDoses] = useState<TodaysDose[]>([]);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadData();
-    }, [])
-  );
+  useFocusEffect(useCallback(() => { loadData(); }, []));
 
   const loadData = async () => {
     setLoading(true);
@@ -80,435 +76,227 @@ export default function MedicationsListScreen() {
         medicationsAPI.getStats(),
         medicationsAPI.getTodaysDoses(),
       ]);
-
-      // Use 'as any' to safely access properties (API responses may be objects)
       const anyMeds = medsRes as any;
       const anyStats = statsRes as any;
       const anyDoses = dosesRes as any;
 
-      // Extract medications array
-      let medicationsArray: Medication[] = [];
-      if (Array.isArray(anyMeds)) {
-        medicationsArray = anyMeds;
-      } else if (anyMeds && anyMeds.medications && Array.isArray(anyMeds.medications)) {
-        medicationsArray = anyMeds.medications;
-      }
-
-      // Extract stats
-      let statsData: Stats | null = null;
-      if (anyStats && typeof anyStats === 'object') {
-        if (anyStats.active_medications !== undefined) {
-          statsData = anyStats;
-        } else if (anyStats.stats && anyStats.stats.active_medications !== undefined) {
-          statsData = anyStats.stats;
-        }
-      }
-
-      // Extract doses array
-      let dosesArray: TodaysDose[] = [];
-      if (Array.isArray(anyDoses)) {
-        dosesArray = anyDoses;
-      } else if (anyDoses && anyDoses.doses && Array.isArray(anyDoses.doses)) {
-        dosesArray = anyDoses.doses;
-      } else if (anyDoses && anyDoses.appointments && Array.isArray(anyDoses.appointments)) {
-        dosesArray = anyDoses.appointments;
-      }
+      let medicationsArray: Medication[] = Array.isArray(anyMeds) ? anyMeds : (anyMeds?.medications || []);
+      let statsData: Stats | null = anyStats?.active_medications !== undefined ? anyStats : (anyStats?.stats || null);
+      let dosesArray: TodaysDose[] = Array.isArray(anyDoses) ? anyDoses : (anyDoses?.doses || []);
 
       setMedications(medicationsArray);
       setStats(statsData);
       setTodaysDoses(dosesArray);
     } catch (error) {
-      Alert.alert('Error', 'Failed to load medications. Please try again.');
-      console.error(error);
+      Alert.alert('Error', 'Failed to load dashboard.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadData();
-  };
+  const onRefresh = () => { setRefreshing(true); loadData(); };
+  const handleAddMedication = () => navigation.navigate('AddMedication', {});
+  const handleMedicationPress = (medicationId: number) => navigation.navigate('MedicationDetail', { medicationId });
+  const handleViewAllDoses = () => navigation.navigate('TodayDoses');
 
-  const handleAddMedication = () => {
-    navigation.navigate('AddMedication',{}); // fixed: was 'Medications'
-  };
-
-  const handleMedicationPress = (medicationId: number) => {
-    navigation.navigate('MedicationDetail', { medicationId });
-  };
-
-  const handleViewAllDoses = () => {
-    navigation.navigate('TodayDoses');
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'TAKEN': return CheckCircle;
-      case 'MISSED': return XCircle;
-      case 'SKIPPED': return AlertCircle;
-      default: return Clock;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'TAKEN': return '#16a34a';
-      case 'MISSED': return '#ef4444';
-      case 'SKIPPED': return '#f97316';
-      default: return '#6b7280';
-    }
-  };
-
-  const renderMedicationItem = ({ item }: { item: Medication }) => {
-    return (
-      <TouchableOpacity
-        style={styles.medicationCard}
-        onPress={() => handleMedicationPress(item.id)}
-        activeOpacity={0.7}
-      >
-        <View style={styles.cardHeader}>
-          <View style={styles.medNameContainer}>
-            <Pill size={20} color="#16a34a" />
-            <Text style={styles.medName}>{item.name}</Text>
-          </View>
-          {item.is_refill_needed && (
-            <View style={styles.refillBadge}>
-              <AlertCircle size={12} color="#854d0e" />
-              <Text style={styles.refillText}>Refill</Text>
-            </View>
-          )}
+  const renderMedicationItem = ({ item }: { item: Medication }) => (
+    <TouchableOpacity
+      style={styles.medCard}
+      onPress={() => handleMedicationPress(item.id)}
+      activeOpacity={0.9}
+    >
+      <View style={styles.medCardBody}>
+        <View style={styles.medIconWrapper}>
+          <Pill size={24} color="#16a34a" />
         </View>
-        <View style={styles.medDetails}>
-          <Text style={styles.medDetail}>{item.dosage} • {item.form_display}</Text>
-          <Text style={styles.medDetail}>Freq: {item.frequency_display}</Text>
-        </View>
-        {item.next_dose_time && (
-          <View style={styles.nextDoseContainer}>
-            <Clock size={14} color="#16a34a" />
-            <Text style={styles.nextDose}>
-              Next: {item.next_dose_time.time} ({item.next_dose_time.date})
-            </Text>
+        <View style={styles.medMainInfo}>
+          <View style={styles.nameRow}>
+            <Text style={styles.medTitleText}>{item.name}</Text>
+            {item.is_refill_needed && (
+              <View style={styles.refillDot} />
+            )}
           </View>
-        )}
-      </TouchableOpacity>
-    );
-  };
+          <Text style={styles.medSubtitleText}>{item.dosage} • {item.form_display}</Text>
+          <View style={styles.freqTag}>
+            <Clock size={12} color="#16a34a" />
+            <Text style={styles.freqTagText}>{item.frequency_display}</Text>
+          </View>
+        </View>
+        <ChevronRight size={20} color="#cbd5e1" />
+      </View>
+      {item.next_dose_time && (
+        <View style={styles.medFooter}>
+          <Text style={styles.footerLabel}>Next dose due at </Text>
+          <Text style={styles.footerTime}>{item.next_dose_time.time}</Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
 
   if (loading && !refreshing) {
     return (
-      <View style={styles.centerContainer}>
+      <View style={styles.center}>
         <ActivityIndicator size="large" color="#16a34a" />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Medications</Text>
-
-      {stats && (
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Heart size={22} color="#16a34a" />
-            <Text style={styles.statValue}>{stats.active_medications}</Text>
-            <Text style={styles.statLabel}>Active</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" />
+      <View style={styles.mainContainer}>
+        {/* Header */}
+        <View style={styles.topHeader}>
+          <View>
+            <Text style={styles.greetingText}>My Health</Text>
+            <Text style={styles.largeTitle}>Medicines</Text>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <CheckCircle size={22} color="#16a34a" />
-            <Text style={styles.statValue}>{stats.doses_taken_today}</Text>
-            <Text style={styles.statLabel}>Taken</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <XCircle size={22} color="#ef4444" />
-            <Text style={styles.statValue}>{stats.doses_missed_today}</Text>
-            <Text style={styles.statLabel}>Missed</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <TrendingUp size={22} color="#16a34a" />
-            <Text style={styles.statValue}>{stats.adherence_rate}%</Text>
-            <Text style={styles.statLabel}>Adherence</Text>
-          </View>
+          <TouchableOpacity onPress={handleAddMedication} style={styles.fabHeader}>
+            <Plus size={24} color="#fff" />
+          </TouchableOpacity>
         </View>
-      )}
 
-      {todaysDoses.length > 0 && (
-        <View style={styles.todaySection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Today's Doses</Text>
-            <TouchableOpacity onPress={handleViewAllDoses}>
-              <Text style={styles.seeAll}>See All</Text>
-            </TouchableOpacity>
-          </View>
-          {todaysDoses.slice(0, 3).map((dose, index) => {
-            const StatusIcon = getStatusIcon(dose.status);
-            return (
-              <View key={index} style={styles.doseItem}>
-                <StatusIcon size={18} color={getStatusColor(dose.status)} />
-                <Text style={styles.doseTime}>{dose.scheduled_time}</Text>
-                <Text style={styles.doseMed} numberOfLines={1}>{dose.medication_name}</Text>
-                <View style={[styles.statusBadge, dose.status === 'TAKEN' ? styles.taken : styles.pending]}>
-                  <Text style={styles.statusText}>{dose.status_display}</Text>
+        <FlatList
+          data={medications}
+          renderItem={renderMedicationItem}
+          keyExtractor={(item) => item.id.toString()}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#16a34a" />}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollPadding}
+          ListHeaderComponent={
+            <>
+              {/* Stats Section */}
+              {stats && (
+                <View style={styles.statsRow}>
+                  <View style={[styles.statBox, { backgroundColor: '#ffffff' }]}>
+                    <Heart size={20} color="#16a34a" />
+                    <Text style={styles.statNum}>{stats.active_medications}</Text>
+                    <Text style={styles.statDesc}>Active</Text>
+                  </View>
+                  <View style={[styles.statBox, { backgroundColor: '#16a34a' }]}>
+                    <TrendingUp size={20} color="#ffffff" />
+                    <Text style={[styles.statNum, { color: '#fff' }]}>{stats.adherence_rate}%</Text>
+                    <Text style={[styles.statDesc, { color: '#dcfce7' }]}>Adherence</Text>
+                  </View>
+                  <View style={[styles.statBox, { backgroundColor: '#ffffff' }]}>
+                    <CheckCircle size={20} color="#16a34a" />
+                    <Text style={styles.statNum}>{stats.doses_taken_today}</Text>
+                    <Text style={styles.statDesc}>Taken</Text>
+                  </View>
                 </View>
+              )}
+
+              {/* Today's Schedule Mini-Card */}
+              {todaysDoses.length > 0 && (
+                <View style={styles.scheduleWidget}>
+                  <View style={styles.widgetHeader}>
+                    <Text style={styles.widgetTitle}>Today's Schedule</Text>
+                    <TouchableOpacity onPress={handleViewAllDoses}>
+                      <Text style={styles.widgetLink}>See Full Log</Text>
+                    </TouchableOpacity>
+                  </View>
+                  {todaysDoses.slice(0, 2).map((dose, i) => (
+                    <View key={i} style={styles.miniDoseRow}>
+                      <View style={[styles.statusIndicator, { backgroundColor: dose.status === 'TAKEN' ? '#16a34a' : '#f59e0b' }]} />
+                      <Text style={styles.miniDoseTime}>{dose.scheduled_time}</Text>
+                      <Text style={styles.miniDoseName} numberOfLines={1}>{dose.medication_name}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              <Text style={styles.listHeaderTitle}>Active Medications</Text>
+            </>
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyWrap}>
+              <View style={styles.emptyCircle}>
+                <FileText size={48} color="#16a34a" />
               </View>
-            );
-          })}
-        </View>
-      )}
-
-      <View style={styles.listHeader}>
-        <Text style={styles.sectionTitle}>My Medications</Text>
-        <TouchableOpacity onPress={handleAddMedication} style={styles.addButton}>
-          <PlusCircle size={24} color="#16a34a" />
-          <Text style={styles.addButtonText}>Add</Text>
-        </TouchableOpacity>
+              <Text style={styles.emptyTitle}>No medications yet</Text>
+              <Text style={styles.emptySub}>Add your prescriptions to start tracking your health journey.</Text>
+              <TouchableOpacity style={styles.emptyBtn} onPress={handleAddMedication}>
+                <Text style={styles.emptyBtnText}>Add Medication</Text>
+              </TouchableOpacity>
+            </View>
+          }
+        />
       </View>
-
-      <FlatList
-        data={medications}
-        renderItem={renderMedicationItem}
-        keyExtractor={(item) => item.id.toString()}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#16a34a']} />}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <FileText size={60} color="#bbf7d0" />
-            <Text style={styles.emptyText}>No medications added yet.</Text>
-            <TouchableOpacity style={styles.emptyButton} onPress={handleAddMedication}>
-              <Text style={styles.emptyButtonText}>Add Your First Medication</Text>
-            </TouchableOpacity>
-          </View>
-        }
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f0fdf4',
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f0fdf4',
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#14532d',
-    marginHorizontal: 20,
-    marginTop: 20,
-    marginBottom: 10,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#ffffff',
-    marginHorizontal: 16,
-    marginTop: 8,
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    shadowColor: '#14532d',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: '#d1fae5',
-    marginHorizontal: 4,
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#14532d',
-    marginTop: 2,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: '#6b7280',
-    marginTop: 2,
-  },
-  todaySection: {
-    backgroundColor: '#ffffff',
-    marginHorizontal: 16,
-    marginTop: 16,
-    padding: 16,
-    borderRadius: 16,
-    shadowColor: '#14532d',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  sectionHeader: {
+  safeArea: { flex: 1, backgroundColor: '#f8fafc' },
+  mainContainer: { flex: 1 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  scrollPadding: { paddingBottom: 120 },
+
+  // Top Header
+  topHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#14532d',
-  },
-  seeAll: {
-    color: '#16a34a',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  doseItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0fdf4',
-  },
-  doseTime: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#14532d',
-    width: 50,
-    marginLeft: 8,
-  },
-  doseMed: {
-    fontSize: 14,
-    color: '#4b5563',
-    flex: 1,
-    marginLeft: 8,
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-  },
-  taken: {
-    backgroundColor: '#d1fae5',
-  },
-  pending: {
-    backgroundColor: '#fef3c7',
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  listHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginHorizontal: 16,
-    marginTop: 20,
-    marginBottom: 10,
-  },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ecfdf5',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-  },
-  addButtonText: {
-    color: '#16a34a',
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 4,
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-  },
-  medicationCard: {
-    backgroundColor: '#ffffff',
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 10,
-    shadowColor: '#14532d',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  medNameContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  medName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#14532d',
-    marginLeft: 8,
-  },
-  refillBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fef9c3',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-  },
-  refillText: {
-    fontSize: 11,
-    color: '#854d0e',
-    marginLeft: 4,
-  },
-  medDetails: {
-    marginBottom: 6,
-  },
-  medDetail: {
-    fontSize: 14,
-    color: '#4b5563',
-    marginTop: 2,
-  },
-  nextDoseContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  nextDose: {
-    fontSize: 13,
-    color: '#16a34a',
-    marginLeft: 6,
-    fontWeight: '500',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#6b7280',
-    marginTop: 12,
-    marginBottom: 16,
-  },
-  emptyButton: {
-    backgroundColor: '#16a34a',
     paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 30,
+    paddingTop: 20,
+    paddingBottom: 15,
   },
-  emptyButtonText: {
-    color: '#fff',
-    fontWeight: '600',
+  greetingText: { fontSize: 14, color: '#64748b', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
+  largeTitle: { fontSize: 32, fontWeight: '800', color: '#14532d' },
+  fabHeader: { 
+    width: 50, height: 50, borderRadius: 25, backgroundColor: '#16a34a', 
+    justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#16a34a', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5
   },
+
+  // Stats
+  statsRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, marginTop: 10 },
+  statBox: { 
+    width: '31%', padding: 18, borderRadius: 24, alignItems: 'center',
+    ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10 }, android: { elevation: 2 } })
+  },
+  statNum: { fontSize: 20, fontWeight: '800', color: '#14532d', marginVertical: 4 },
+  statDesc: { fontSize: 11, fontWeight: '600', color: '#64748b' },
+
+  // Schedule Widget
+  scheduleWidget: { 
+    backgroundColor: '#fff', marginHorizontal: 20, marginTop: 24, borderRadius: 28, padding: 20,
+    borderWidth: 1, borderColor: '#f1f5f9' 
+  },
+  widgetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  widgetTitle: { fontSize: 18, fontWeight: '700', color: '#1e293b' },
+  widgetLink: { color: '#16a34a', fontWeight: '700', fontSize: 13 },
+  miniDoseRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  statusIndicator: { width: 8, height: 8, borderRadius: 4, marginRight: 12 },
+  miniDoseTime: { fontSize: 14, fontWeight: '700', color: '#1e293b', width: 60 },
+  miniDoseName: { fontSize: 14, color: '#64748b', flex: 1 },
+
+  // Med List
+  listHeaderTitle: { fontSize: 20, fontWeight: '700', color: '#14532d', marginHorizontal: 24, marginTop: 30, marginBottom: 15 },
+  medCard: { 
+    backgroundColor: '#fff', marginHorizontal: 20, borderRadius: 24, marginBottom: 16,
+    borderWidth: 1, borderColor: '#f1f5f9', overflow: 'hidden',
+    ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 10 }, android: { elevation: 1 } })
+  },
+  medCardBody: { flexDirection: 'row', alignItems: 'center', padding: 20 },
+  medIconWrapper: { width: 50, height: 50, borderRadius: 18, backgroundColor: '#f0fdf4', justifyContent: 'center', alignItems: 'center' },
+  medMainInfo: { flex: 1, marginLeft: 16 },
+  nameRow: { flexDirection: 'row', alignItems: 'center' },
+  medTitleText: { fontSize: 18, fontWeight: '700', color: '#1e293b' },
+  refillDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#ef4444', marginLeft: 8 },
+  medSubtitleText: { fontSize: 14, color: '#64748b', marginTop: 2 },
+  freqTag: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0fdf4', alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, marginTop: 8 },
+  freqTagText: { fontSize: 12, color: '#16a34a', fontWeight: '700', marginLeft: 5 },
+  medFooter: { backgroundColor: '#f8fafc', paddingHorizontal: 20, paddingVertical: 12, flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#f1f5f9' },
+  footerLabel: { fontSize: 12, color: '#94a3b8' },
+  footerTime: { fontSize: 12, color: '#16a34a', fontWeight: '700' },
+
+  // Empty State
+  emptyWrap: { alignItems: 'center', paddingHorizontal: 40, marginTop: 40 },
+  emptyCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#dcfce7', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  emptyTitle: { fontSize: 20, fontWeight: '700', color: '#1e293b', marginBottom: 10 },
+  emptySub: { fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 20, marginBottom: 25 },
+  emptyBtn: { backgroundColor: '#16a34a', paddingHorizontal: 30, paddingVertical: 14, borderRadius: 20 },
+  emptyBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
 });

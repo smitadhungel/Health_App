@@ -2,6 +2,10 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.conf import settings
 
+from django.db import models
+from django.core.exceptions import ValidationError
+from django.conf import settings
+
 class DoctorProfile(models.Model):
     """Extended profile for doctors"""
     
@@ -33,37 +37,38 @@ class DoctorProfile(models.Model):
     bio = models.TextField(blank=True, help_text="Brief description about the doctor")
     clinic_address = models.TextField(blank=True)
     is_available = models.BooleanField(default=True)
-    is_verified = models.BooleanField(default=False)
     rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)
-    total_patients = models.PositiveIntegerField(default=0)
+    # Remove total_patients field - we'll calculate it dynamically
+    # total_patients = models.PositiveIntegerField(default=0)  # DELETE THIS LINE
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    # Add this to DoctorProfile model
+    
     VERIFICATION_STATUS_CHOICES = [
-    ('PENDING', 'Pending Review'),
-    ('APPROVED', 'Approved'),
-    ('REJECTED', 'Rejected'),
+        ('PENDING', 'Pending Review'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
     ]
     profile_photo = models.ImageField(
-    upload_to='doctor_photos/', null=True, blank=True
-)
+        upload_to='doctor_photos/', null=True, blank=True
+    )
     license_photo = models.ImageField(
-    upload_to='doctor_licenses/', null=True, blank=True
-)
+        upload_to='doctor_licenses/', null=True, blank=True
+    )
     verification_status = models.CharField(
-    max_length=20,
-    choices=VERIFICATION_STATUS_CHOICES,
-    default='PENDING'
-)
+        max_length=20,
+        choices=VERIFICATION_STATUS_CHOICES,
+        default='PENDING'
+    )
     rejection_reason = models.TextField(blank=True, help_text="Reason for rejection")
     verified_at = models.DateTimeField(null=True, blank=True)
     verified_by = models.ForeignKey(
-    settings.AUTH_USER_MODEL,
-    on_delete=models.SET_NULL,
-    null=True, blank=True,
-    related_name='verified_doctors',
-    limit_choices_to={'role': 'ADMIN'}
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='verified_doctors',
+        limit_choices_to={'role': 'ADMIN'}
     )
+    
     class Meta:
         db_table = 'doctor_profiles'
         ordering = ['-rating', '-experience_years']
@@ -71,13 +76,26 @@ class DoctorProfile(models.Model):
             models.Index(fields=['specialization']),
             models.Index(fields=['is_available']),
         ]
+    
     @property
     def is_verified(self):
         return self.verification_status == 'APPROVED'
     
+    # ADD THIS NEW PROPERTY
+    @property
+    def total_patients(self):
+        """Calculate total unique patients who have had appointments with this doctor"""
+        from appointments.models import Appointment  # Import here to avoid circular import
+        
+        # Count unique patients (by user_id) who have booked appointments
+        unique_patients = Appointment.objects.filter(
+            doctor=self
+        ).values('patient').distinct().count()
+        
+        return unique_patients
+    
     def __str__(self):
         return f"Dr. {self.user.get_full_name()} - {self.get_specialization_display()}"
-
 
 class DoctorAvailability(models.Model):
     """Doctor's weekly availability schedule"""

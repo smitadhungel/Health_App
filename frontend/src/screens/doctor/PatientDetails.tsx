@@ -78,9 +78,6 @@ export default function PatientDetails() {
     <ScrollView contentContainerStyle={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-back" size={24} color="#16a34a" />
-        </TouchableOpacity>
         <Text style={styles.headerTitle}>Patient Details</Text>
         <View style={{ width: 40 }} />
       </View>
@@ -152,9 +149,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#14532d',
+fontSize: 20, fontWeight: 'bold', color: '#14532d', marginTop: 10, marginBottom: 10
   },
   card: {
     backgroundColor: '#ffffff',

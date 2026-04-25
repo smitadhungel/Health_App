@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,436 +11,300 @@ import {
   TextInput,
   ScrollView,
   Platform,
-  SafeAreaView,
+  StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { doctorsAPI } from '../../services/api';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-interface AvailabilitySlot {
-  id: number;
-  day_of_week: number; // 0-6
-  start_time: string;
-  end_time: string;
-  slot_duration: number;
-  is_active: boolean;
-}
-
-const DAYS_OF_WEEK = [
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-  'Sunday'
-];
+// Define slot colors to differentiate morning/evening
+const getSlotColor = (time: string) => {
+  const hour = parseInt(time.split(':')[0], 10);
+  if (hour < 12) return '#10b981'; // Morning - Green
+  if (hour < 17) return '#f59e0b'; // Afternoon - Orange
+  return '#6366f1'; // Evening - Indigo
+};
 
 export default function SetAvailabilityScreen({ navigation }: any) {
-  const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
+  const [availability, setAvailability] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [doctorId, setDoctorId] = useState<number | null>(null);
 
-  // New slot form state
+  // Form State
   const [selectedDay, setSelectedDay] = useState(0);
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
   const [slotDuration, setSlotDuration] = useState('30');
-
-  // Time picker states
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
 
-  useEffect(() => {
-    loadDoctorProfile();
-  }, []);
+  const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const FULL_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-  const loadDoctorProfile = async () => {
+  const loadInitialData = useCallback(async () => {
     try {
       const profile = await doctorsAPI.getMyProfile();
       setDoctorId(profile.id);
-      loadAvailability(profile.id);
-    } catch (error) {
-      Alert.alert('Error', 'Doctor profile not found. Please complete your profile first.');
-      navigation.goBack();
-    }
-  };
-
-  const loadAvailability = async (id: number) => {
-    try {
-      const data = await doctorsAPI.getAvailability(id);
+      const data = await doctorsAPI.getAvailability(profile.id);
       setAvailability(data);
     } catch (error) {
-      console.error('Error loading availability:', error);
-      Alert.alert('Error', 'Failed to load availability schedule');
+      Alert.alert('Profile Required', 'Please complete your doctor profile to set availability.');
+      navigation.goBack();
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigation]);
+
+  useEffect(() => {
+    loadInitialData();
+  }, [loadInitialData]);
 
   const handleAddSlot = async () => {
-    if (!startTime || !endTime || !slotDuration) {
-      Alert.alert('Error', 'Please fill all fields');
-      return;
-    }
     if (startTime >= endTime) {
-      Alert.alert('Error', 'End time must be after start time');
+      Alert.alert('Invalid Time', 'End time must be later than start time.');
       return;
     }
 
     setSubmitting(true);
     try {
-      const newSlot = {
-        day_of_week: selectedDay,                 // integer 0-6
+      const payload = {
+        day_of_week: selectedDay,
         start_time: startTime,
         end_time: endTime,
-        slot_duration: parseInt(slotDuration, 10), // integer
-        is_active: true,                           // matches backend field
+        slot_duration: parseInt(slotDuration, 10),
+        is_active: true,
       };
-      console.log('Sending slot data:', newSlot);
-      await doctorsAPI.addAvailability(newSlot);
-      Alert.alert('Success', 'Availability slot added');
+      await doctorsAPI.addAvailability(payload);
       setModalVisible(false);
-      // Reset form
-      setSelectedDay(0);
-      setStartTime('09:00');
-      setEndTime('17:00');
-      setSlotDuration('30');
-      if (doctorId) loadAvailability(doctorId);
-    } catch (error: any) {
-      console.error('Error adding slot:', error);
-      if (error.response) {
-        const errorData = error.response.data;
-        let errorMsg = 'Failed to add slot.';
-        if (typeof errorData === 'string') errorMsg = errorData;
-        else if (errorData.detail) errorMsg = errorData.detail;
-        else if (errorData.message) errorMsg = errorData.message;
-        else if (errorData.error) errorMsg = errorData.error;
-        else if (errorData.non_field_errors) errorMsg = errorData.non_field_errors.join(', ');
-        else {
-          const firstKey = Object.keys(errorData)[0];
-          if (firstKey && errorData[firstKey]) {
-            errorMsg = `${firstKey}: ${Array.isArray(errorData[firstKey]) ? errorData[firstKey][0] : errorData[firstKey]}`;
-          } else {
-            errorMsg = JSON.stringify(errorData);
-          }
-        }
-        Alert.alert('Error', errorMsg);
-      } else if (error.request) {
-        Alert.alert('Network Error', 'No response from server. Please check your connection.');
-      } else {
-        Alert.alert('Error', 'Failed to add slot. Please try again.');
+      if (doctorId) {
+        const updated = await doctorsAPI.getAvailability(doctorId);
+        setAvailability(updated);
       }
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Could not add slot');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleDeleteSlot = (slotId: number) => {
-    Alert.alert('Delete Slot', 'Are you sure you want to delete this slot?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            // If you have a delete endpoint:
-            // await doctorsAPI.deleteAvailability(slotId);
-            // For now, optimistically remove from UI
-            setAvailability(prev => prev.filter(s => s.id !== slotId));
-            Alert.alert('Success', 'Slot deleted');
-          } catch (error) {
-            Alert.alert('Error', 'Failed to delete slot');
-          }
-        },
-      },
-    ]);
-  };
-
-  const formatTime = (time: string) => {
-    const [hour, minute] = time.split(':');
-    const h = parseInt(hour, 10);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const hour12 = h % 12 || 12;
-    return `${hour12}:${minute} ${ampm}`;
-  };
-
-  const groupedAvailability = DAYS_OF_WEEK.map((day, index) => ({
-    day,
-    slots: availability.filter(s => s.day_of_week === index),
-  }));
-
-  const renderDaySection = ({ item }: { item: { day: string; slots: AvailabilitySlot[] } }) => (
-    <View style={styles.daySection}>
-      <Text style={styles.dayHeader}>{item.day}</Text>
-      {item.slots.length === 0 ? (
-        <Text style={styles.noSlotsText}>No slots set</Text>
-      ) : (
-        item.slots.map(slot => (
-          <View key={slot.id} style={styles.slotRow}>
-            <View style={styles.slotInfo}>
-              <Text style={styles.slotTimeText}>
-                {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
-              </Text>
-              <Text style={styles.slotDurationText}>{slot.slot_duration} min</Text>
-            </View>
-            <TouchableOpacity onPress={() => handleDeleteSlot(slot.id)} style={styles.deleteButton}>
-              <Icon name="trash-outline" size={22} color="#ef4444" />
-            </TouchableOpacity>
+  const renderSlot = ({ item }: { item: any }) => (
+    <View style={styles.modernSlotCard}>
+      <View style={[styles.timeIndicator, { backgroundColor: getSlotColor(item.start_time) }]} />
+      <View style={styles.slotMain}>
+        <View style={styles.slotTimeRow}>
+          <Icon name="time-outline" size={16} color="#64748b" />
+          <Text style={styles.timeRangeText}>
+            {item.start_time.slice(0, 5)} — {item.end_time.slice(0, 5)}
+          </Text>
+        </View>
+        <View style={styles.tagRow}>
+          <View style={styles.durationTag}>
+            <Text style={styles.tagText}>{item.slot_duration} min slots</Text>
           </View>
-        ))
-      )}
+          <View style={styles.dayTag}>
+            <Text style={styles.tagText}>{FULL_DAYS[item.day_of_week]}</Text>
+          </View>
+        </View>
+      </View>
+      <TouchableOpacity style={styles.trashBtn}>
+        <Icon name="trash-outline" size={20} color="#ef4444" />
+      </TouchableOpacity>
     </View>
   );
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#16a34a" />
-      </View>
-    );
-  }
-
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-back" size={24} color="#16a34a" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Manage Availability</Text>
-        <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.addButton}>
-          <Icon name="add-circle" size={30} color="#16a34a" />
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      <SafeAreaView edges={['top']} style={styles.header}>
+        <View style={styles.navRow}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.roundBtn}>
+            <Icon name="chevron-back" size={24} color="#1e293b" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Schedule</Text>
+          <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.addBtn}>
+            <Icon name="add" size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
 
-      <FlatList
-        data={groupedAvailability}
-        keyExtractor={(item) => item.day}
-        renderItem={renderDaySection}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
-
-      {/* Add Slot Modal */}
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add Availability Slot</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Icon name="close" size={24} color="#4b5563" />
+      {loading ? (
+        <View style={styles.centered}><ActivityIndicator color="#10b981" /></View>
+      ) : (
+        <FlatList
+          data={availability}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderSlot}
+          contentContainerStyle={styles.listContainer}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Icon name="calendar-outline" size={64} color="#cbd5e1" />
+              <Text style={styles.emptyText}>No active working hours set</Text>
+              <TouchableOpacity style={styles.emptyAddBtn} onPress={() => setModalVisible(true)}>
+                <Text style={styles.emptyAddText}>Add Your First Slot</Text>
               </TouchableOpacity>
             </View>
+          }
+        />
+      )}
 
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.label}>Day</Text>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={selectedDay}
-                  onValueChange={(value) => setSelectedDay(value)}
-                  style={styles.picker}
-                >
-                  {DAYS_OF_WEEK.map((day, index) => (
-                    <Picker.Item key={index} label={day} value={index} />
-                  ))}
-                </Picker>
-              </View>
-
-              <Text style={styles.label}>Start Time</Text>
-              <TouchableOpacity onPress={() => setShowStartPicker(true)} style={styles.timeButton}>
-                <Text style={styles.timeText}>{startTime}</Text>
-              </TouchableOpacity>
-              {showStartPicker && (
-                <DateTimePicker
-                  value={(() => {
-                    const [h, m] = startTime.split(':').map(Number);
-                    const d = new Date();
-                    d.setHours(h, m, 0);
-                    return d;
-                  })()}
-                  mode="time"
-                  is24Hour={true}
-                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                  onChange={(event, selectedDate) => {
-                    setShowStartPicker(false);
-                    if (selectedDate) {
-                      const hours = selectedDate.getHours().toString().padStart(2, '0');
-                      const minutes = selectedDate.getMinutes().toString().padStart(2, '0');
-                      setStartTime(`${hours}:${minutes}`);
-                    }
-                  }}
-                />
-              )}
-
-              <Text style={styles.label}>End Time</Text>
-              <TouchableOpacity onPress={() => setShowEndPicker(true)} style={styles.timeButton}>
-                <Text style={styles.timeText}>{endTime}</Text>
-              </TouchableOpacity>
-              {showEndPicker && (
-                <DateTimePicker
-                  value={(() => {
-                    const [h, m] = endTime.split(':').map(Number);
-                    const d = new Date();
-                    d.setHours(h, m, 0);
-                    return d;
-                  })()}
-                  mode="time"
-                  is24Hour={true}
-                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                  onChange={(event, selectedDate) => {
-                    setShowEndPicker(false);
-                    if (selectedDate) {
-                      const hours = selectedDate.getHours().toString().padStart(2, '0');
-                      const minutes = selectedDate.getMinutes().toString().padStart(2, '0');
-                      setEndTime(`${hours}:${minutes}`);
-                    }
-                  }}
-                />
-              )}
-
-              <Text style={styles.label}>Slot Duration (minutes)</Text>
-              <TextInput
-                style={styles.input}
-                value={slotDuration}
-                onChangeText={setSlotDuration}
-                keyboardType="numeric"
-                placeholder="e.g., 30"
-                placeholderTextColor="#9ca3af"
-              />
-
-              <TouchableOpacity
-                style={[styles.saveButton, submitting && styles.disabledButton]}
-                onPress={handleAddSlot}
-                disabled={submitting}
-              >
-                {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>Add Slot</Text>}
-              </TouchableOpacity>
-            </ScrollView>
+      {/* Modern Add Slot Modal */}
+      <Modal visible={modalVisible} animationType="slide" presentationStyle="pageSheet">
+        <SafeAreaView style={styles.modalBody}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}></Text>
+            <TouchableOpacity onPress={() => setModalVisible(false)}>
+              <Text style={styles.closeText}>Cancel</Text>
+            </TouchableOpacity>
           </View>
-        </View>
+
+          <ScrollView style={styles.modalScroll}>
+            <Text style={styles.sectionLabel}>Select Day</Text>
+            <View style={styles.dayPicker}>
+              {DAYS_OF_WEEK.map((day, index) => (
+                <TouchableOpacity
+                  key={day}
+                  onPress={() => setSelectedDay(index)}
+                  style={[styles.dayCircle, selectedDay === index && styles.dayCircleActive]}
+                >
+                  <Text style={[styles.dayLetter, selectedDay === index && styles.dayLetterActive]}>{day}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <View style={styles.timeInputRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.sectionLabel}>Starts</Text>
+                <TouchableOpacity onPress={() => setShowStartPicker(true)} style={styles.timePickerBtn}>
+                  <Icon name="play-outline" size={18} color="#10b981" />
+                  <Text style={styles.timePickerText}>{startTime}</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={{ width: 20 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.sectionLabel}>Ends</Text>
+                <TouchableOpacity onPress={() => setShowEndPicker(true)} style={styles.timePickerBtn}>
+                  <Icon name="stop-outline" size={18} color="#ef4444" />
+                  <Text style={styles.timePickerText}>{endTime}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <Text style={styles.sectionLabel}>Duration per Patient (mins)</Text>
+            <View style={styles.durationRow}>
+              {['15', '30', '45', '60'].map((d) => (
+                <TouchableOpacity
+                  key={d}
+                  onPress={() => setSlotDuration(d)}
+                  style={[styles.durationChip, slotDuration === d && styles.durationChipActive]}
+                >
+                  <Text style={[styles.durationChipText, slotDuration === d && styles.durationChipTextActive]}>{d}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={[styles.mainSaveBtn, submitting && { opacity: 0.7 }]}
+              onPress={handleAddSlot}
+              disabled={submitting}
+            >
+              {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.mainSaveText}>Save Schedule</Text>}
+            </TouchableOpacity>
+          </ScrollView>
+        </SafeAreaView>
+
+        {/* Start Picker Modal (Android logic handled via DateTimePicker directly) */}
+        {showStartPicker && (
+          <DateTimePicker
+            mode="time"
+            value={new Date()}
+            onChange={(e, date) => {
+              setShowStartPicker(false);
+              if (date) setStartTime(`${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`);
+            }}
+          />
+        )}
+        {showEndPicker && (
+          <DateTimePicker
+            mode="time"
+            value={new Date()}
+            onChange={(e, date) => {
+              setShowEndPicker(false);
+              if (date) setEndTime(`${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`);
+            }}
+          />
+        )}
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f0fdf4' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0fdf4' },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#bbf7d0',
-    shadowColor: '#14532d',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  backButton: { padding: 5 },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#14532d' },
-  addButton: { padding: 5 },
-  listContent: { padding: 20, paddingBottom: 40 },
-  daySection: { marginBottom: 24 },
-  dayHeader: { fontSize: 18, fontWeight: '700', color: '#16a34a', marginBottom: 12, letterSpacing: 0.5 },
-  noSlotsText: { fontSize: 14, color: '#6b7280', fontStyle: 'italic', marginLeft: 12 },
-  slotRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 10,
-    shadowColor: '#14532d',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#bbf7d0',
-  },
-  slotInfo: { flex: 1 },
-  slotTimeText: { fontSize: 16, fontWeight: '500', color: '#14532d', marginBottom: 4 },
-  slotDurationText: { fontSize: 14, color: '#4b5563' },
-  deleteButton: { padding: 8, backgroundColor: '#fef2f2', borderRadius: 8 },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  navRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, height: 60 },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#1e293b' },
+  roundBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center' },
+  addBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#10b981', justifyContent: 'center', alignItems: 'center' },
+  
+  listContainer: { padding: 20 },
+  modernSlotCard: {
     backgroundColor: '#fff',
-    borderRadius: 20,
-    width: '90%',
-    maxHeight: '80%',
-    padding: 24,
-    shadowColor: '#14532d',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: { fontSize: 22, fontWeight: 'bold', color: '#14532d' },
-  label: { fontSize: 16, fontWeight: '600', color: '#166534', marginTop: 16, marginBottom: 8 },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: '#bbf7d0',
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: '#f0fdf4',
-  },
-  picker: { height: 50, color: '#14532d' },
-  timeButton: {
-    borderWidth: 1,
-    borderColor: '#bbf7d0',
-    borderRadius: 12,
-    padding: 14,
-    backgroundColor: '#f0fdf4',
-    marginBottom: 8,
-  },
-  timeText: { fontSize: 16, color: '#14532d' },
-  input: {
-    borderWidth: 1,
-    borderColor: '#bbf7d0',
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-    backgroundColor: '#f0fdf4',
-    color: '#14532d',
-    marginBottom: 8,
-  },
-  saveButton: {
-    backgroundColor: '#16a34a',
+    borderRadius: 16,
     padding: 16,
-    borderRadius: 12,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 24,
-    shadowColor: '#16a34a',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 3,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
   },
-  disabledButton: { backgroundColor: '#86efac' },
-  saveButtonText: { color: '#fff', fontWeight: '700', fontSize: 18 },
+  timeIndicator: { width: 4, height: 40, borderRadius: 2, marginRight: 15 },
+  slotMain: { flex: 1 },
+  slotTimeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  timeRangeText: { fontSize: 16, fontWeight: '700', color: '#1e293b' },
+  tagRow: { flexDirection: 'row', gap: 8, marginTop: 6 },
+  durationTag: { backgroundColor: '#f0fdf4', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
+  dayTag: { backgroundColor: '#f8fafc', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, borderWidth: 1, borderColor: '#e2e8f0' },
+  tagText: { fontSize: 11, fontWeight: '600', color: '#64748b' },
+  trashBtn: { padding: 8 },
+
+  emptyState: { alignItems: 'center', marginTop: 100 },
+  emptyText: { fontSize: 16, color: '#94a3b8', marginTop: 12, fontWeight: '500' },
+  emptyAddBtn: { marginTop: 20, backgroundColor: '#10b981', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 },
+  emptyAddText: { color: '#fff', fontWeight: '700' },
+
+  // Modal Styles
+  modalBody: { flex: 1, backgroundColor: '#fff' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: '#1e293b' },
+  closeText: { color: '#ef4444', fontWeight: '600' },
+  modalScroll: { padding: 20 },
+  sectionLabel: { fontSize: 13, fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', marginBottom: 12, marginTop: 20 },
+  
+  dayPicker: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+  dayCircle: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#f8fafc', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0' },
+  dayCircleActive: { backgroundColor: '#10b981', borderColor: '#10b981' },
+  dayLetter: { fontSize: 12, fontWeight: '700', color: '#64748b' },
+  dayLetterActive: { color: '#fff' },
+
+  timeInputRow: { flexDirection: 'row' },
+  timePickerBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#f8fafc', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0' },
+  timePickerText: { fontSize: 16, fontWeight: '700', color: '#1e293b' },
+
+  durationRow: { flexDirection: 'row', gap: 10 },
+  durationChip: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: '#f8fafc', alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0' },
+  durationChipActive: { backgroundColor: '#1e293b', borderColor: '#1e293b' },
+  durationChipText: { fontWeight: '700', color: '#64748b' },
+  durationChipTextActive: { color: '#fff' },
+
+  mainSaveBtn: { backgroundColor: '#10b981', padding: 18, borderRadius: 16, alignItems: 'center', marginTop: 40, elevation: 4, shadowColor: '#10b981', shadowOpacity: 0.3, shadowRadius: 10 },
+  mainSaveText: { color: '#fff', fontSize: 16, fontWeight: '800' }
 });

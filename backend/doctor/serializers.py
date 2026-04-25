@@ -40,6 +40,8 @@ class DoctorProfileSerializer(serializers.ModelSerializer):
         decimal_places=2, 
         read_only=True
     )
+    # ADD THIS LINE - tells DRF to include the property
+    total_patients = serializers.IntegerField(read_only=True)
     
     class Meta:
         model = DoctorProfile
@@ -63,6 +65,8 @@ class DoctorListSerializer(serializers.ModelSerializer):
         source='get_specialization_display', 
         read_only=True
     )
+    # ADD THIS LINE
+    total_patients = serializers.IntegerField(read_only=True)
     
     class Meta:
         model = DoctorProfile
@@ -70,9 +74,9 @@ class DoctorListSerializer(serializers.ModelSerializer):
             'id', 'doctor_name', 'email', 'phone',
             'specialization', 'specialization_display',
             'qualification', 'experience_years',
-            'consultation_fee', 'rating', 'is_available', 'is_verified'
+            'consultation_fee', 'rating', 'is_available', 
+            'is_verified', 'total_patients'  # ADD total_patients here
         ]
-
 
 class CreateDoctorProfileSerializer(serializers.ModelSerializer):
     """Serializer for creating/updating doctor profile"""

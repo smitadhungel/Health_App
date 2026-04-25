@@ -262,3 +262,30 @@ class AppointmentListSerializer(serializers.ModelSerializer):
             'appointment_date', 'appointment_time', 'duration_minutes',
             'status', 'status_display', 'is_upcoming', 'reason'
         ]
+
+class AppointmentDetailSerializer(serializers.ModelSerializer):
+    """Detailed appointment serializer with full doctor information"""
+    patient_name = serializers.CharField(source='patient.get_full_name', read_only=True)
+    doctor_name = serializers.CharField(source='doctor.user.get_full_name', read_only=True)
+    doctor_email = serializers.EmailField(source='doctor.user.email', read_only=True)
+    doctor_phone = serializers.CharField(source='doctor.user.phone_number', read_only=True)
+    doctor_specialization = serializers.CharField(source='doctor.get_specialization_display', read_only=True)
+    doctor_qualification = serializers.CharField(source='doctor.qualification', read_only=True)
+    doctor_experience_years = serializers.IntegerField(source='doctor.experience_years', read_only=True)
+    doctor_bio = serializers.CharField(source='doctor.bio', read_only=True)
+    clinic_address = serializers.CharField(source='doctor.clinic_address', read_only=True)
+    consultation_fee = serializers.DecimalField(source='doctor.consultation_fee', max_digits=10, decimal_places=2, read_only=True)
+    doctor_profile_photo = serializers.ImageField(source='doctor.profile_photo', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
+    class Meta:
+        model = Appointment
+        fields = [
+            'id', 'patient_name', 'doctor_name', 'doctor_email', 'doctor_phone',
+            'doctor_specialization', 'doctor_qualification', 'doctor_experience_years',
+            'doctor_bio', 'clinic_address', 'consultation_fee', 'doctor_profile_photo',
+            'appointment_date', 'appointment_time', 'duration_minutes',
+            'status', 'status_display', 'reason', 'symptoms', 'notes',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']

@@ -10,9 +10,9 @@ import { PatientStackParamList } from '../../navigation/types';
 import { authAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import {
-  Mail, Phone, Calendar, Pill, FileText,
-  AlertCircle, ChevronRight, ArrowRight,
-  LogOut, Stethoscope, Hospital, ClipboardList,
+   Calendar, Pill, FileText,
+  AlertCircle, ChevronRight,
+  LogOut, Hospital, ClipboardList,List
 } from 'lucide-react-native';
 
 type Nav = NativeStackNavigationProp<PatientStackParamList, 'PatientHome'>;
@@ -73,33 +73,39 @@ export default function PatientHomeScreen() {
     );
   }
 
-  const quickActions = [
-    {
-      title: 'Book', subtitle: 'Appointment',
-      icon: <Calendar size={28} color="#0284c7" />,
-      bg: '#e0f2fe', onPress: () => navigation.navigate('BookAppointment'),
-    },
-    {
-      title: 'Hospital', subtitle: 'Nearby',
-      icon: <Hospital size={28} color="#ca8a04" />,
-      bg: '#fef9c3', onPress: () => navigation.navigate('PlaceDetails'),
-    },
-    {
-      title: 'Medications', subtitle: 'Track & Reminders',
-      icon: <Pill size={28} color="#16a34a" />,
-      bg: '#dcfce7', onPress: () => navigation.navigate('Medications'),
-    },
-    {
-      title: 'Documents', subtitle: 'Medical Records',
-      icon: <FileText size={28} color="#334155" />,
-      bg: '#f1f5f9', onPress: () => navigation.navigate('Documents'),
-    },
-    {
-      title: 'Prescriptions', subtitle: 'From Doctors',
-      icon: <ClipboardList size={28} color="#7c3aed" />,
-      bg: '#ede9fe', onPress: () => navigation.navigate('Prescriptions'),
-    },
-  ];
+ const quickActions = [
+  {
+    title: 'Book', subtitle: 'Appointment',
+    icon: <Calendar size={28} color="#0284c7" />,
+    bg: '#e0f2fe', onPress: () => navigation.navigate('BookAppointment'),
+  },
+  {
+    title: 'Hospital', subtitle: 'Nearby',
+    icon: <Hospital size={28} color="#ca8a04" />,
+    bg: '#fef9c3', onPress: () => navigation.navigate('PlaceDetails'),
+  },
+  {
+    title: 'Medications', subtitle: 'Track & Reminders',
+    icon: <Pill size={28} color="#16a34a" />,
+    bg: '#dcfce7', onPress: () => navigation.navigate('Medications'),
+  },
+  {
+    title: 'Documents', subtitle: 'Medical Records',
+    icon: <FileText size={28} color="#334155" />,
+    bg: '#f1f5f9', onPress: () => navigation.navigate('Documents'),
+  },
+  {
+    title: 'Prescriptions', subtitle: 'From Doctors',
+    icon: <ClipboardList size={28} color="#7c3aed" />,
+    bg: '#ede9fe', onPress: () => navigation.navigate('Prescriptions'),
+  },
+  {
+    title: 'Appointments', subtitle: 'Upcoming',  // Fixed typo: Upcomming → Upcoming
+    icon: <List size={28} color="#0284c7" />,
+    bg: '#e0f2fe', 
+    onPress: () => navigation.navigate('MyAppointments')  // Navigate to appointments list screen
+  }
+];
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -110,7 +116,7 @@ export default function PatientHomeScreen() {
       </View>
 
       {/* Info Card */}
-      {user && (
+      {/* {user && (
         <View style={styles.infoCard}>
           <Mail size={16} color="#166534" />
           <Text style={styles.infoText}>{user.email}</Text>
@@ -121,7 +127,7 @@ export default function PatientHomeScreen() {
             </>
           )}
         </View>
-      )}
+      )} */}
 
       {/* Quick Actions Grid */}
       <Text style={styles.sectionTitle}>Quick Actions</Text>

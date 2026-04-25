@@ -1,7 +1,3 @@
-# ============================================
-# appointments/views.py
-# ============================================
-
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -10,20 +6,18 @@ from django.db.models import Q
 from datetime import datetime, date, timedelta
 from .models import Appointment, AppointmentHistory
 from doctor.models import DoctorProfile
+from rest_framework.decorators import action
 from .serializers import (
     AppointmentSerializer,
     CreateAppointmentSerializer,
     UpdateAppointmentSerializer,
     RescheduleAppointmentSerializer,
     DoctorUpdateAppointmentSerializer,
-    AppointmentListSerializer
+    AppointmentListSerializer,AppointmentSerializer, AppointmentDetailSerializer
 )
 from .permissions import IsPatient, IsDoctor, IsAppointmentOwner
-
-
-# ============================================
-# PATIENT VIEWS - Book & Manage Appointments
-# ============================================
+# from .serializers import AppointmentSerializer, AppointmentDetailSerializer
+from rest_framework import viewsets
 
 class CreateAppointmentView(generics.CreateAPIView):
     """Book a new appointment (patients only)"""
@@ -98,7 +92,7 @@ class MyAppointmentsListView(generics.ListAPIView):
 
 class AppointmentDetailView(generics.RetrieveAPIView):
     """Get detailed appointment information"""
-    serializer_class = AppointmentSerializer
+    serializer_class = AppointmentDetailSerializer
     permission_classes = [IsAuthenticated, IsAppointmentOwner]
     lookup_field = 'id'
     
@@ -495,3 +489,41 @@ class AvailableTimeSlotsView(APIView):
             'available_slots': available_slots,
             'total_slots': len(available_slots)
         })
+
+
+
+
+
+class AppointmentViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    
+    def get_serializer_class(self):
+        # Use detailed serializer for retrieve action
+        if self.action == 'retrieve':
+            return AppointmentDetailSerializer
+        return AppointmentSerializer
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'PATIENT':
+            return Appointment.objects.filter(patient=user)
+        elif user.role == 'DOCTOR':
+            return Appointment.objects.filter(doctor__user=user)
+        return Appointment.objects.none()
+    
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        """Cancel an appointment"""
+        appointment = self.get_object()
+        
+        # Check if can be cancelled
+        if appointment.status in ['COMPLETED', 'CANCELLED']:
+            return Response(
+                {'error': 'This appointment cannot be cancelled'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        appointment.status = 'CANCELLED'
+        appointment.save()
+        
+        return Response({'message': 'Appointment cancelled successfully'})

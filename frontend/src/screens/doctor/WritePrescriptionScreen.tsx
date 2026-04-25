@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput,
-  TouchableOpacity, Alert, ActivityIndicator,
+  TouchableOpacity, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, StatusBar
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { DoctorStackParamList } from '../../navigation/types';
 import { prescriptionsAPI } from '../../services/api';
-import { Plus, Trash2, Send, Stethoscope, Pill, ClipboardList } from 'lucide-react-native';
+import { Plus, Trash2, Send, Pill, ClipboardList, Info, UserCircle } from 'lucide-react-native';
 
 type Route = RouteProp<DoctorStackParamList, 'WritePrescription'>;
 
@@ -40,238 +41,241 @@ export default function WritePrescriptionScreen() {
   };
 
   const addMed = () => setMedications([...medications, emptyMed()]);
-
   const removeMed = (index: number) => {
     if (medications.length === 1) return;
     setMedications(medications.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async () => {
-    if (!diagnosis.trim()) {
-      Alert.alert('Required', 'Please enter a diagnosis.');
-      return;
-    }
-    const invalidMed = medications.find(m => !m.medicine_name.trim() || !m.dosage.trim());
-    if (invalidMed) {
-      Alert.alert('Required', 'Each medication must have a name and dosage.');
-      return;
-    }
+    if (!diagnosis.trim()) return Alert.alert('Missing Field', 'Please enter a diagnosis.');
+    const invalid = medications.find(m => !m.medicine_name.trim() || !m.dosage.trim());
+    if (invalid) return Alert.alert('Invalid Meds', 'Each medicine needs at least a name and dosage.');
 
     setSubmitting(true);
     try {
       await prescriptionsAPI.create({
-        patient: patientId,
-        related_document: documentId,
-        diagnosis,
-        notes,
-        medications,
+        patient: patientId, related_document: documentId,
+        diagnosis, notes, medications,
       });
-      Alert.alert('Success', 'Prescription issued successfully!', [
-        { text: 'OK', onPress: () => navigation.goBack() }
+      Alert.alert('Issued', 'The prescription has been sent to the patient.', [
+        { text: 'Finish', onPress: () => navigation.goBack() }
       ]);
     } catch (e: any) {
-      Alert.alert('Error', e?.response?.data?.message || 'Failed to issue prescription.');
+      Alert.alert('Error', 'Could not save prescription. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: 20 }}>
-      {/* Patient Header Card */}
-      <View style={styles.patientCard}>
-        <View style={styles.patientIconBox}>
-          <Stethoscope size={24} color="#14532d" />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.patientLabel}>PATIENT</Text>
-          <Text style={styles.patientName}>{patientName}</Text>
-          {documentTitle && (
-            <Text style={styles.documentRef}>📄 Ref: {documentTitle}</Text>
-          )}
-        </View>
-      </View>
-
-      {/* Diagnosis Section */}
-      <View style={styles.section}>
-        <View style={styles.labelRow}>
-          <ClipboardList size={16} color="#14532d" />
-          <Text style={styles.label}>Diagnosis <Text style={styles.required}>*</Text></Text>
-        </View>
-        <TextInput
-          style={styles.textArea}
-          placeholder="e.g. Acute Viral Fever / Hypertension..."
-          placeholderTextColor="#94a3b8"
-          value={diagnosis}
-          onChangeText={setDiagnosis}
-          multiline
-          numberOfLines={3}
-        />
-      </View>
-
-      {/* Medications Section */}
-      <View style={styles.section}>
-        <View style={styles.labelRow}>
-          <Pill size={16} color="#14532d" />
-          <Text style={styles.label}>Medications <Text style={styles.required}>*</Text></Text>
-        </View>
-        
-        {medications.map((med, index) => (
-          <View key={index} style={styles.medCard}>
-            <View style={styles.medHeader}>
-              <Text style={styles.medNumber}>MEDICINE #{index + 1}</Text>
-              {medications.length > 1 && (
-                <TouchableOpacity onPress={() => removeMed(index)} style={styles.deleteBtn}>
-                  <Trash2 size={16} color="#ef4444" />
-                </TouchableOpacity>
-              )}
-            </View>
-
-            <TextInput
-              style={styles.input}
-              placeholder="Medicine Name (e.g. Amoxicillin) *"
-              placeholderTextColor="#94a3b8"
-              value={med.medicine_name}
-              onChangeText={v => updateMed(index, 'medicine_name', v)}
-            />
-
-            <View style={styles.inputRow}>
-              <TextInput
-                style={[styles.input, { flex: 1, marginRight: 8 }]}
-                placeholder="Dosage (500mg) *"
-                placeholderTextColor="#94a3b8"
-                value={med.dosage}
-                onChangeText={v => updateMed(index, 'dosage', v)}
-              />
-              <TextInput
-                style={[styles.input, { flex: 1 }]}
-                placeholder="Freq (1-0-1)"
-                placeholderTextColor="#94a3b8"
-                value={med.frequency}
-                onChangeText={v => updateMed(index, 'frequency', v)}
-              />
-            </View>
-
-            <View style={styles.inputRow}>
-              <TextInput
-                style={[styles.input, { flex: 1, marginRight: 8 }]}
-                placeholder="Duration (5 days)"
-                placeholderTextColor="#94a3b8"
-                value={med.duration}
-                onChangeText={v => updateMed(index, 'duration', v)}
-              />
-              <TextInput
-                style={[styles.input, { flex: 1 }]}
-                placeholder="Instructions (After food)"
-                placeholderTextColor="#94a3b8"
-                value={med.instructions}
-                onChangeText={v => updateMed(index, 'instructions', v)}
-              />
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <StatusBar barStyle="dark-content" />
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+        style={{ flex: 1 }}
+      >
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollPadding}>
+          
+          {/* Header Card */}
+          <View style={styles.headerCard}>
+            <View style={styles.patientRow}>
+              <UserCircle size={40} color="#065f46" />
+              <View style={styles.patientInfo}>
+                <Text style={styles.patientName}>{patientName}</Text>
+                <Text style={styles.refText}>Ref: {documentTitle || 'General Consultation'}</Text>
+              </View>
             </View>
           </View>
-        ))}
 
-        <TouchableOpacity style={styles.addMedButton} onPress={addMed}>
-          <Plus size={18} color="#166534" />
-          <Text style={styles.addMedText}>Add Another Medication</Text>
-        </TouchableOpacity>
-      </View>
+          {/* Diagnosis Block */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <ClipboardList size={18} color="#059669" />
+              <Text style={styles.sectionTitle}>Diagnosis</Text>
+            </View>
+            <TextInput
+              style={styles.diagnosisInput}
+              placeholder="Enter primary condition..."
+              value={diagnosis}
+              onChangeText={setDiagnosis}
+              multiline
+            />
+          </View>
 
-      {/* Notes Section */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Additional Doctor's Notes</Text>
-        <TextInput
-          style={styles.textArea}
-          placeholder="Advice on diet, lifestyle, or follow-up..."
-          placeholderTextColor="#94a3b8"
-          value={notes}
-          onChangeText={setNotes}
-          multiline
-          numberOfLines={3}
-        />
-      </View>
+          {/* Medication Block */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Pill size={18} color="#059669" />
+              <Text style={styles.sectionTitle}>Medications</Text>
+            </View>
 
-      {/* Submit Button */}
-      <TouchableOpacity
-        style={[styles.submitButton, submitting && { opacity: 0.7 }]}
-        onPress={handleSubmit}
-        disabled={submitting}
-      >
-        {submitting
-          ? <ActivityIndicator color="#fff" />
-          : <>
-              <Send size={18} color="#fff" />
-              <Text style={styles.submitText}>Issue Prescription</Text>
-            </>
-        }
-      </TouchableOpacity>
-    </ScrollView>
+            {medications.map((med, index) => (
+              <View key={index} style={styles.medicationCard}>
+                <View style={styles.medCardHeader}>
+                  <View style={styles.medIndexBadge}>
+                    <Text style={styles.medIndexText}>{index + 1}</Text>
+                  </View>
+                  {medications.length > 1 && (
+                    <TouchableOpacity onPress={() => removeMed(index)}>
+                      <Trash2 size={18} color="#ef4444" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                <TextInput
+                  style={styles.mainInput}
+                  placeholder="Medicine Name (e.g. Paracetamol)"
+                  value={med.medicine_name}
+                  onChangeText={v => updateMed(index, 'medicine_name', v)}
+                />
+
+                <View style={styles.inputGrid}>
+                  <View style={styles.gridItem}>
+                    <Text style={styles.miniLabel}>Dosage</Text>
+                    <TextInput
+                      style={styles.gridInput}
+                      placeholder="500mg"
+                      value={med.dosage}
+                      onChangeText={v => updateMed(index, 'dosage', v)}
+                    />
+                  </View>
+                  <View style={styles.gridItem}>
+                    <Text style={styles.miniLabel}>Frequency</Text>
+                    <TextInput
+                      style={styles.gridInput}
+                      placeholder="1-0-1"
+                      value={med.frequency}
+                      onChangeText={v => updateMed(index, 'frequency', v)}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.inputGrid}>
+                  <View style={styles.gridItem}>
+                    <Text style={styles.miniLabel}>Duration</Text>
+                    <TextInput
+                      style={styles.gridInput}
+                      placeholder="7 Days"
+                      value={med.duration}
+                      onChangeText={v => updateMed(index, 'duration', v)}
+                    />
+                  </View>
+                  <View style={styles.gridItem}>
+                    <Text style={styles.miniLabel}>Instructions</Text>
+                    <TextInput
+                      style={styles.gridInput}
+                      placeholder="After food"
+                      value={med.instructions}
+                      onChangeText={v => updateMed(index, 'instructions', v)}
+                    />
+                  </View>
+                </View>
+              </View>
+            ))}
+
+            <TouchableOpacity style={styles.addBtn} onPress={addMed}>
+              <Plus size={20} color="#059669" />
+              <Text style={styles.addBtnText}>Add Medication</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Notes Block */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Info size={18} color="#059669" />
+              <Text style={styles.sectionTitle}>Advice & Notes</Text>
+            </View>
+            <TextInput
+              style={styles.notesInput}
+              placeholder="Bed rest, drink plenty of water, etc..."
+              value={notes}
+              onChangeText={setNotes}
+              multiline
+            />
+          </View>
+        </ScrollView>
+
+        {/* Action Footer */}
+        <View style={styles.footer}>
+          <TouchableOpacity 
+            style={[styles.submitBtn, submitting && styles.btnDisabled]} 
+            onPress={handleSubmit}
+            disabled={submitting}
+          >
+            {submitting ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Text style={styles.submitBtnText}>Issue Prescription</Text>
+                <Send size={20} color="#fff" />
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f0fdf4' },
-  patientCard: {
-    backgroundColor: '#14532d', borderRadius: 16,
-    padding: 16, marginBottom: 20,
-    flexDirection: 'row', alignItems: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  scrollPadding: { padding: 20, paddingBottom: 100 },
+
+  // Header Card
+  headerCard: {
+    backgroundColor: '#fff', borderRadius: 20, padding: 16, marginBottom: 24,
+    borderWidth: 1, borderColor: '#e2e8f0', elevation: 2, shadowColor: '#000', shadowOpacity: 0.05
   },
-  patientIconBox: {
-    width: 48, height: 48, borderRadius: 24,
-    backgroundColor: '#dcfce7', justifyContent: 'center',
-    alignItems: 'center', marginRight: 14,
-  },
-  patientLabel: { fontSize: 10, fontWeight: '800', color: '#bbf7d0', letterSpacing: 1 },
-  patientName: { fontSize: 20, fontWeight: '700', color: '#fff' },
-  documentRef: { fontSize: 12, color: '#dcfce7', marginTop: 4, fontStyle: 'italic' },
+  patientRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  patientInfo: { flex: 1 },
+  patientName: { fontSize: 18, fontWeight: '800', color: '#1e293b' },
+  refText: { fontSize: 13, color: '#64748b', marginTop: 2 },
+
+  // Section Styling
+  section: { marginBottom: 24 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  sectionTitle: { fontSize: 14, fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 },
   
-  section: { marginBottom: 20 },
-  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
-  label: { fontSize: 15, fontWeight: '700', color: '#14532d' },
-  required: { color: '#ef4444' },
-
-  input: {
-    backgroundColor: '#fff', borderRadius: 10, padding: 12,
-    fontSize: 14, color: '#1f2937', marginBottom: 10,
-    borderWidth: 1, borderColor: '#bbf7d0',
+  diagnosisInput: {
+    backgroundColor: '#fff', borderRadius: 12, padding: 16, fontSize: 16,
+    borderWidth: 1, borderColor: '#e2e8f0', minHeight: 80, textAlignVertical: 'top'
   },
-  inputRow: { flexDirection: 'row' },
-  textArea: {
-    backgroundColor: '#fff', borderRadius: 10, padding: 12,
-    fontSize: 14, color: '#1f2937', textAlignVertical: 'top',
-    borderWidth: 1, borderColor: '#bbf7d0', minHeight: 80,
+  notesInput: {
+    backgroundColor: '#fff', borderRadius: 12, padding: 16, fontSize: 15,
+    borderWidth: 1, borderColor: '#e2e8f0', minHeight: 100, textAlignVertical: 'top'
   },
 
-  medCard: {
-    backgroundColor: '#fff', borderRadius: 14,
-    padding: 14, marginBottom: 12,
-    borderWidth: 1, borderColor: '#bbf7d0',
-    borderLeftWidth: 6, borderLeftColor: '#22c55e',
-    shadowColor: '#14532d', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05, shadowRadius: 2, elevation: 1,
+  // Medication Card
+  medicationCard: {
+    backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 16,
+    borderWidth: 1, borderColor: '#cbd5e1', borderLeftWidth: 4, borderLeftColor: '#10b981'
   },
-  medHeader: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', marginBottom: 12,
-  },
-  medNumber: { fontSize: 11, fontWeight: '800', color: '#166534', letterSpacing: 0.5 },
-  deleteBtn: { padding: 4 },
+  medCardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  medIndexBadge: { backgroundColor: '#f1f5f9', width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  medIndexText: { fontSize: 12, fontWeight: '800', color: '#475569' },
   
-  addMedButton: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'center', backgroundColor: '#dcfce7',
-    borderRadius: 12, padding: 14, gap: 8,
-    borderWidth: 1, borderColor: '#bbf7d0', borderStyle: 'dashed',
-  },
-  addMedText: { fontSize: 14, fontWeight: '700', color: '#166534' },
+  mainInput: { fontSize: 16, fontWeight: '700', borderBottomWidth: 1, borderBottomColor: '#f1f5f9', paddingBottom: 8, marginBottom: 16 },
+  
+  inputGrid: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  gridItem: { flex: 1 },
+  miniLabel: { fontSize: 11, fontWeight: '700', color: '#94a3b8', marginBottom: 4, textTransform: 'uppercase' },
+  gridInput: { backgroundColor: '#f8fafc', borderRadius: 8, padding: 10, fontSize: 14, borderWidth: 1, borderColor: '#f1f5f9' },
 
-  submitButton: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'center', backgroundColor: '#14532d',
-    borderRadius: 16, padding: 18, gap: 10,
-    marginBottom: 40,
+  addBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    padding: 16, borderRadius: 12, borderStyle: 'dashed', borderWidth: 2, borderColor: '#10b981', gap: 8
   },
-  submitText: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  addBtnText: { color: '#059669', fontWeight: '700', fontSize: 15 },
+
+  // Footer
+  footer: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: '#fff', padding: 20, borderTopWidth: 1, borderTopColor: '#f1f5f9'
+  },
+  submitBtn: {
+    backgroundColor: '#064e3b', borderRadius: 16, padding: 18,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12
+  },
+  submitBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  btnDisabled: { opacity: 0.6 }
 });

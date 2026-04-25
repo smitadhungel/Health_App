@@ -1110,7 +1110,7 @@ export default function BookAppointmentScreen() {
 
 const styles = StyleSheet.create({
   container:   { flex: 1, backgroundColor: '#f0fdf4', padding: 20 },
-  pageTitle:   { fontSize: 26, fontWeight: 'bold', color: '#14532d', marginTop: 20, marginBottom: 20 },
+  pageTitle:   { fontSize: 22, fontWeight: 'bold', color: '#14532d', marginTop: 20, marginBottom: 20 },
   card:        { backgroundColor: '#fff', padding: 20, borderRadius: 16, elevation: 3, marginBottom: 30 },
   label:       { fontSize: 15, fontWeight: '600', color: '#166534', marginBottom: 8, marginTop: 16 },
   selector:    { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#bbf7d0', borderRadius: 12, padding: 14, backgroundColor: '#dcfce7' },

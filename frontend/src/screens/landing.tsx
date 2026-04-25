@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  Animated, Dimensions, StatusBar, SafeAreaView,
+  Animated, Dimensions, StatusBar
 } from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -121,7 +122,7 @@ export default function LandingScreen() {
         </Animated.View>
         <Text style={styles.brandName}>Medicare</Text>
         <View style={styles.brandLine} />
-        <Text style={styles.aiLabel}>AI-Powered Healthcare</Text>
+        <Text style={styles.aiLabel}>Smart Healthcare</Text>
       </Animated.View>
 
       {/* Hero Text */}
@@ -131,7 +132,7 @@ export default function LandingScreen() {
           <Text style={styles.taglineBold}>in trusted hands.</Text>
         </Text>
         <Text style={styles.taglineSub}>
-          The complete digital healthcare companion powered{'\n'}by artificial intelligence.
+          The complete digital healthcare companion powered{'\n'}by Medicare.
         </Text>
       </Animated.View>
 
@@ -150,7 +151,7 @@ export default function LandingScreen() {
             <Activity size={22} color="#fff" />
           </View>
           <Text style={[styles.featureTitle, { color: '#14532d' }]}>Smart</Text>
-          <Text style={styles.featureSub}>AI Insights</Text>
+          <Text style={styles.featureSub}>Tracking</Text>
         </Animated.View>
 
         <Animated.View style={[styles.featureCard, { opacity: card3Anim, transform: [{ scale: card3Anim }] }]}>

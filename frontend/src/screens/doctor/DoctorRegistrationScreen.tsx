@@ -1,4 +1,3 @@
-// screens/doctor/DoctorRegistrationScreen.tsx
 import React, { useState } from 'react';
 import {
   View,
@@ -9,8 +8,12 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
 } from 'react-native';
-import { doctorsAPI, authAPI } from '../../services/api';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Ensure this is installed
+import { doctorsAPI } from '../../services/api';
 
 export default function DoctorRegistrationScreen({ navigation }: any) {
   const [formData, setFormData] = useState({
@@ -23,202 +26,151 @@ export default function DoctorRegistrationScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
-    // Validate required fields
-    if (!formData.specialization.trim() || !formData.hospital.trim()) {
-      Alert.alert('Error', 'Specialization and Hospital are required');
-      return;
-    }
-
-    if (!formData.license_number.trim()) {
-      Alert.alert('Error', 'Medical License Number is required');
+    if (!formData.specialization.trim() || !formData.hospital.trim() || !formData.license_number.trim()) {
+      Alert.alert('Incomplete Form', 'Please fill in all fields marked with an asterisk (*)');
       return;
     }
 
     setLoading(true);
     try {
-      // Step 1: Create doctor profile
       const doctorProfileData = {
-        specialization: formData.specialization,
-        hospital: formData.hospital,
-        license_number: formData.license_number,
+        ...formData,
         experience_years: formData.experience_years ? parseInt(formData.experience_years) : 0,
         consultation_fee: formData.consultation_fee ? parseFloat(formData.consultation_fee) : 0,
         available: true,
       };
 
-      console.log('Creating doctor profile:', doctorProfileData);
-      const response = await doctorsAPI.createProfile(doctorProfileData);
-      console.log('Doctor profile created:', response);
-
-      // Step 2: Update user role (if needed - depends on your backend)
-      // You might need to call your backend to update the user's role
+      await doctorsAPI.createProfile(doctorProfileData);
 
       Alert.alert(
-        'Success',
-        'Doctor registration submitted! Your application is under review. ' +
-        'You will be notified when approved.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
+        'Application Sent',
+        'Your professional profile is being verified by our medical board. We will notify you via email once approved.',
+        [{ text: 'Great!', onPress: () => navigation.goBack() }]
       );
     } catch (error: any) {
-      console.error('Doctor registration error:', error);
-      
-      let errorMessage = 'Registration failed. Please try again.';
-      if (error.response?.data) {
-        const data = error.response.data;
-        if (data.detail) {
-          errorMessage = data.detail;
-        } else if (data.error) {
-          errorMessage = data.error;
-        } else if (data.specialization) {
-          errorMessage = `Specialization: ${data.specialization}`;
-        } else if (data.license_number) {
-          errorMessage = `License: ${data.license_number}`;
-        }
-      }
-      
-      Alert.alert('Registration Failed', errorMessage);
+      Alert.alert('Submission Failed', 'Please verify your details and try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>👨‍⚕️ Doctor Registration</Text>
-      <Text style={styles.subtitle}>
-        Complete your professional profile to start accepting appointments
-      </Text>
-
-      <View style={styles.form}>
-        <Text style={styles.label}>Specialization *</Text>
+  const renderInput = (label: string, icon: string, key: keyof typeof formData, placeholder: string, keyboard = 'default', required = false) => (
+    <View style={styles.inputContainer}>
+      <Text style={styles.label}>{label} {required && <Text style={styles.required}>*</Text>}</Text>
+      <View style={styles.inputWrapper}>
+        <Icon name={icon} size={20} color="#6366f1" style={styles.inputIcon} />
         <TextInput
           style={styles.input}
-          placeholder="e.g., Cardiologist, General Physician"
-          value={formData.specialization}
-          onChangeText={(text) => setFormData({ ...formData, specialization: text })}
+          placeholder={placeholder}
+          placeholderTextColor="#94a3b8"
+          value={formData[key]}
+          onChangeText={(text) => setFormData({ ...formData, [key]: text })}
+          keyboardType={keyboard as any}
         />
-
-        <Text style={styles.label}>Hospital/Clinic Name *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g., City Hospital, Health Clinic"
-          value={formData.hospital}
-          onChangeText={(text) => setFormData({ ...formData, hospital: text })}
-        />
-
-        <Text style={styles.label}>Medical License Number *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Your official license number"
-          value={formData.license_number}
-          onChangeText={(text) => setFormData({ ...formData, license_number: text })}
-        />
-
-        <Text style={styles.label}>Years of Experience</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g., 5"
-          value={formData.experience_years}
-          onChangeText={(text) => setFormData({ ...formData, experience_years: text })}
-          keyboardType="numeric"
-        />
-
-        <Text style={styles.label}>Consultation Fee (₹)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g., 500"
-          value={formData.consultation_fee}
-          onChangeText={(text) => setFormData({ ...formData, consultation_fee: text })}
-          keyboardType="numeric"
-        />
-
-        <TouchableOpacity
-          style={[styles.button, loading && styles.disabledButton]}
-          onPress={handleSubmit}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Submit Application</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>← Back to Dashboard</Text>
-        </TouchableOpacity>
       </View>
-    </ScrollView>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          
+          {/* Header Section */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backCircle}>
+              <Icon name="chevron-left" size={28} color="#1e293b" />
+            </TouchableOpacity>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.title}>Join Our Network</Text>
+              <Text style={styles.subtitle}>Partner with us to provide quality care</Text>
+            </View>
+          </View>
+
+          {/* Form Card */}
+          <View style={styles.formCard}>
+            <View style={styles.stepIndicator}>
+              <View style={styles.stepActive} />
+              <View style={styles.stepLine} />
+              <View style={styles.stepInactive} />
+            </View>
+
+            <Text style={styles.sectionTitle}>Professional Information</Text>
+
+            {renderInput('Medical Specialization', 'stethoscope', 'specialization', 'e.g. Cardiologist', 'default', true)}
+            {renderInput('Hospital/Clinic', 'hospital-building', 'hospital', 'e.g. Mayo Clinic', 'default', true)}
+            {renderInput('License Number', 'card-account-details-outline', 'license_number', 'Official Medical ID', 'default', true)}
+            
+            <View style={styles.row}>
+              <View style={{ flex: 1, marginRight: 10 }}>
+                {renderInput('Experience', 'briefcase-outline', 'experience_years', 'Years', 'numeric')}
+              </View>
+              <View style={{ flex: 1 }}>
+                {renderInput('Fee (₹)', 'currency-inr', 'consultation_fee', 'Price', 'numeric')}
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.mainButton, loading && styles.disabledButton]}
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Text style={styles.buttonText}>Submit Application</Text>
+                  <Icon name="arrow-right" size={20} color="#fff" />
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.footerText}>
+            By submitting, you agree to our <Text style={styles.link}>Provider Terms of Service</Text>
+          </Text>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f7fb',
-    padding: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#000',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 30,
-  },
-  form: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 12,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-    marginTop: 15,
-    color: '#333',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: '#fff',
-  },
-  button: {
-    backgroundColor: '#4f46e5',
-    paddingVertical: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 25,
-  },
-  disabledButton: {
-    backgroundColor: '#a5b4fc',
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  backButton: {
-    marginTop: 15,
-    padding: 12,
-    alignItems: 'center',
-  },
-  backButtonText: {
-    color: '#666',
-    fontSize: 14,
-  },
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  scrollContent: { padding: 20 },
+  
+  // Header
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 30, marginTop: 10 },
+  backCircle: { width: 45, height: 45, borderRadius: 23, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', elevation: 2, shadowOpacity: 0.1, shadowRadius: 5 },
+  headerTextContainer: { marginLeft: 15 },
+  title: { fontSize: 26, fontWeight: '800', color: '#1e293b' },
+  subtitle: { fontSize: 14, color: '#64748b', marginTop: 2 },
+
+  // Form Card
+  formCard: { backgroundColor: '#fff', borderRadius: 24, padding: 24, elevation: 4, shadowColor: '#6366f1', shadowOpacity: 0.08, shadowRadius: 15, shadowOffset: { width: 0, height: 10 } },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1e293b', marginBottom: 20 },
+  
+  // Custom Stepper Look
+  stepIndicator: { flexDirection: 'row', alignItems: 'center', marginBottom: 25 },
+  stepActive: { width: 40, height: 6, borderRadius: 3, backgroundColor: '#6366f1' },
+  stepLine: { flex: 1, height: 2, backgroundColor: '#f1f5f9', marginHorizontal: 8 },
+  stepInactive: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#f1f5f9' },
+
+  // Input Styling
+  inputContainer: { marginBottom: 18 },
+  label: { fontSize: 14, fontWeight: '600', color: '#475569', marginBottom: 8, marginLeft: 4 },
+  required: { color: '#ef4444' },
+  inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f8fafc', borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', paddingHorizontal: 12 },
+  inputIcon: { marginRight: 10 },
+  input: { flex: 1, paddingVertical: 12, fontSize: 16, color: '#1e293b' },
+  row: { flexDirection: 'row' },
+
+  // Button
+  mainButton: { backgroundColor: '#6366f1', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 16, borderRadius: 14, marginTop: 20, gap: 10 },
+  disabledButton: { backgroundColor: '#a5b4fc' },
+  buttonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+
+  // Footer
+  footerText: { textAlign: 'center', color: '#94a3b8', fontSize: 12, marginTop: 25, lineHeight: 18 },
+  link: { color: '#6366f1', fontWeight: '600' },
 });

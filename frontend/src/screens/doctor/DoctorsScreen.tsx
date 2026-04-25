@@ -1,5 +1,4 @@
-// src/screens/doctors/DoctorsScreen.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,6 +9,8 @@ import {
   ActivityIndicator,
   RefreshControl,
   Image,
+  SafeAreaView,
+  StatusBar,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { doctorsAPI } from '../../services/api';
@@ -19,26 +20,23 @@ export default function DoctorsScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSpecialization, setSelectedSpecialization] = useState('');
+  const [selectedSpecialization, setSelectedSpecialization] = useState('All');
 
+  // Mapping icons to specializations for a richer UI
   const specializations = [
-    'All',
-    'Cardiology',
-    'Dermatology',
-    'Neurology',
-    'Pediatrics',
-    'Orthopedics',
-    'Psychiatry',
+    { name: 'All', icon: 'apps-outline' },
+    { name: 'Cardiology', icon: 'heart-outline' },
+    { name: 'Dermatology', icon: 'sparkles-outline' },
+    { name: 'Neurology', icon: 'pulse-outline' },
+    { name: 'Pediatrics', icon: 'balloon-outline' },
+    { name: 'Orthopedics', icon: 'body-outline' },
+    { name: 'Psychiatry', icon: 'brain-outline' },
   ];
 
-  useEffect(() => {
-    loadDoctors();
-  }, [selectedSpecialization]);
-
-  const loadDoctors = async () => {
+  const loadDoctors = useCallback(async () => {
     try {
       const params: any = {};
-      if (selectedSpecialization && selectedSpecialization !== 'All') {
+      if (selectedSpecialization !== 'All') {
         params.specialization = selectedSpecialization;
       }
       if (searchQuery) {
@@ -53,77 +51,97 @@ export default function DoctorsScreen({ navigation }: any) {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [selectedSpecialization, searchQuery]);
+
+  useEffect(() => {
+    loadDoctors();
+  }, [loadDoctors]);
 
   const onRefresh = () => {
     setRefreshing(true);
     loadDoctors();
   };
 
-  const handleSearch = () => {
-    setLoading(true);
-    loadDoctors();
-  };
-
   const renderDoctor = ({ item }: any) => (
     <TouchableOpacity
+      activeOpacity={0.9}
       style={styles.doctorCard}
       onPress={() => navigation.navigate('DoctorDetails', { doctorId: item.id })}
     >
-      <View style={styles.doctorImageContainer}>
-        {item.profile_image ? (
-          <Image source={{ uri: item.profile_image }} style={styles.doctorImage} />
-        ) : (
-          <View style={styles.doctorImagePlaceholder}>
-            <Icon name="person" size={40} color="#007AFF" />
-          </View>
-        )}
-        {item.is_available && <View style={styles.availableBadge} />}
-      </View>
-
-      <View style={styles.doctorInfo}>
-        <Text style={styles.doctorName}>Dr. {item.full_name}</Text>
-        <Text style={styles.specialization}>{item.specialization}</Text>
-        
-        <View style={styles.infoRow}>
-          <Icon name="location" size={14} color="#666" />
-          <Text style={styles.infoText}>{item.clinic_address || 'N/A'}</Text>
+      <View style={styles.cardTop}>
+        <View style={styles.imageWrapper}>
+          {item.profile_image ? (
+            <Image source={{ uri: item.profile_image }} style={styles.doctorImage} />
+          ) : (
+            <View style={styles.placeholderImage}>
+              <Icon name="person" size={30} color="#6366f1" />
+            </View>
+          )}
+          {item.is_available && <View style={styles.onlineIndicator} />}
         </View>
 
-        <View style={styles.footer}>
-          <View style={styles.rating}>
-            <Icon name="star" size={16} color="#FFD700" />
-            <Text style={styles.ratingText}>
-              {item.average_rating?.toFixed(1) || 'N/A'} ({item.total_reviews || 0})
+        <View style={styles.mainInfo}>
+          <View style={styles.nameRow}>
+            <Text style={styles.doctorName} numberOfLines={1}>Dr. {item.full_name}</Text>
+            <View style={styles.ratingBadge}>
+              <Icon name="star" size={12} color="#f59e0b" />
+              <Text style={styles.ratingText}>{item.average_rating?.toFixed(1) || '5.0'}</Text>
+            </View>
+          </View>
+          
+          <Text style={styles.specText}>{item.specialization}</Text>
+          
+          <View style={styles.locationRow}>
+            <Icon name="location-outline" size={14} color="#94a3b8" />
+            <Text style={styles.locationText} numberOfLines={1}>
+              {item.clinic_address || 'City Medical Center'}
             </Text>
           </View>
-          <Text style={styles.fee}>₹{item.consultation_fee || 'N/A'}</Text>
         </View>
+      </View>
+
+      <View style={styles.cardDivider} />
+
+      <View style={styles.cardBottom}>
+        <View style={styles.experienceBox}>
+          <Text style={styles.expValue}>{item.experience_years || '8'}+ Yrs</Text>
+          <Text style={styles.expLabel}>Experience</Text>
+        </View>
+        <View style={styles.feeBox}>
+          <Text style={styles.feeValue}>₹{item.consultation_fee}</Text>
+          <Text style={styles.feeLabel}>Consultation</Text>
+        </View>
+        <TouchableOpacity 
+          style={styles.bookBtn}
+          onPress={() => navigation.navigate('DoctorDetails', { doctorId: item.id })}
+        >
+          <Text style={styles.bookBtnText}>Book</Text>
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
 
-  if (loading && !refreshing) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      
+      {/* Search & Filter Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Find Doctors</Text>
-        
-        <View style={styles.searchContainer}>
-          <Icon name="search" size={20} color="#666" />
+        <View style={styles.topRow}>
+          <Text style={styles.headerTitle}>Find Doctors</Text>
+          <TouchableOpacity style={styles.filterBtn}>
+            <Icon name="options-outline" size={20} color="#1e293b" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.searchBar}>
+          <Icon name="search-outline" size={20} color="#94a3b8" />
           <TextInput
-            style={styles.searchInput}
-            placeholder="Search doctors..."
+            style={styles.input}
+            placeholder="Search name or clinic..."
+            placeholderTextColor="#94a3b8"
             value={searchQuery}
             onChangeText={setSearchQuery}
-            onSubmitEditing={handleSearch}
           />
         </View>
 
@@ -131,198 +149,173 @@ export default function DoctorsScreen({ navigation }: any) {
           horizontal
           showsHorizontalScrollIndicator={false}
           data={specializations}
-          keyExtractor={(item) => item}
+          keyExtractor={(item) => item.name}
+          contentContainerStyle={styles.specListContent}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[
-                styles.specializationChip,
-                selectedSpecialization === item && styles.specializationChipActive,
+                styles.specChip,
+                selectedSpecialization === item.name && styles.specChipActive,
               ]}
-              onPress={() => setSelectedSpecialization(item === 'All' ? '' : item)}
+              onPress={() => setSelectedSpecialization(item.name)}
             >
+              <Icon 
+                name={item.icon} 
+                size={16} 
+                color={selectedSpecialization === item.name ? '#fff' : '#6366f1'} 
+              />
               <Text
                 style={[
-                  styles.specializationText,
-                  selectedSpecialization === item && styles.specializationTextActive,
+                  styles.specChipText,
+                  selectedSpecialization === item.name && styles.specChipTextActive,
                 ]}
               >
-                {item}
+                {item.name}
               </Text>
             </TouchableOpacity>
           )}
-          style={styles.specializationList}
         />
       </View>
 
-      <FlatList
-        data={doctors}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderDoctor}
-        contentContainerStyle={styles.list}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Icon name="medical" size={60} color="#ccc" />
-            <Text style={styles.emptyText}>No doctors found</Text>
-          </View>
-        }
-      />
-    </View>
+      {loading && !refreshing ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#6366f1" />
+        </View>
+      ) : (
+        <FlatList
+          data={doctors}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderDoctor}
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366f1" />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <View style={styles.emptyIconCircle}>
+                <Icon name="search-outline" size={40} color="#cbd5e1" />
+              </View>
+              <Text style={styles.emptyText}>No doctors found matching your criteria</Text>
+            </View>
+          }
+        />
+      )}
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  
+  // Header Styles
   header: {
     backgroundColor: '#fff',
-    padding: 15,
-    paddingTop: 60,
+    paddingBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#f1f5f9',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    color: '#333',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 15,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 10,
-    fontSize: 16,
-  },
-  specializationList: {
-    marginTop: 10,
-  },
-  specializationChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f0f0f0',
-    marginRight: 10,
-  },
-  specializationChipActive: {
-    backgroundColor: '#007AFF',
-  },
-  specializationText: {
-    fontSize: 14,
-    color: '#333',
-  },
-  specializationTextActive: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  list: {
-    padding: 15,
-  },
-  doctorCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
-    flexDirection: 'row',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  doctorImageContainer: {
-    position: 'relative',
-  },
-  doctorImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-  },
-  doctorImagePlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  availableBadge: {
-    position: 'absolute',
-    bottom: 5,
-    right: 5,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#34C759',
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  doctorInfo: {
-    flex: 1,
-    marginLeft: 15,
-  },
-  doctorName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  specialization: {
-    fontSize: 14,
-    color: '#007AFF',
-    marginTop: 2,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  infoText: {
-    fontSize: 12,
-    color: '#666',
-    marginLeft: 5,
-  },
-  footer: {
+  topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 10,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    marginBottom: 15,
   },
-  rating: {
+  headerTitle: { fontSize: 24, fontWeight: '800', color: '#1e293b' },
+  filterBtn: { padding: 8, backgroundColor: '#f1f5f9', borderRadius: 10 },
+  
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#f1f5f9',
+    marginHorizontal: 20,
+    paddingHorizontal: 15,
+    borderRadius: 12,
+    height: 48,
+    marginBottom: 15,
   },
-  ratingText: {
-    fontSize: 14,
-    marginLeft: 5,
-    color: '#333',
-  },
-  fee: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#34C759',
-  },
-  emptyContainer: {
+  input: { flex: 1, marginLeft: 10, fontSize: 16, color: '#1e293b' },
+  
+  specListContent: { paddingHorizontal: 20, gap: 10 },
+  specChip: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 100,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: '#eff6ff',
+    borderWidth: 1,
+    borderColor: '#dbeafe',
+    gap: 8,
   },
-  emptyText: {
-    fontSize: 16,
-    color: '#999',
-    marginTop: 10,
+  specChipActive: { backgroundColor: '#6366f1', borderColor: '#6366f1' },
+  specChipText: { fontSize: 14, fontWeight: '600', color: '#1e293b' },
+  specChipTextActive: { color: '#fff' },
+
+  // Doctor Card Styles
+  list: { padding: 20 },
+  doctorCard: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+    elevation: 4,
+    shadowColor: '#6366f1',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
   },
+  cardTop: { flexDirection: 'row', alignItems: 'center' },
+  imageWrapper: { position: 'relative' },
+  doctorImage: { width: 70, height: 70, borderRadius: 20 },
+  placeholderImage: { 
+    width: 70, height: 70, borderRadius: 20, 
+    backgroundColor: '#f5f7ff', justifyContent: 'center', alignItems: 'center' 
+  },
+  onlineIndicator: {
+    position: 'absolute', bottom: -2, right: -2,
+    width: 16, height: 16, borderRadius: 8,
+    backgroundColor: '#22c55e', borderWidth: 3, borderColor: '#fff',
+  },
+  mainInfo: { flex: 1, marginLeft: 15 },
+  nameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  doctorName: { fontSize: 17, fontWeight: '700', color: '#1e293b', flex: 1 },
+  ratingBadge: { 
+    flexDirection: 'row', alignItems: 'center', 
+    backgroundColor: '#fffbeb', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 
+  },
+  ratingText: { fontSize: 12, fontWeight: '700', color: '#92400e', marginLeft: 4 },
+  specText: { fontSize: 14, color: '#6366f1', fontWeight: '600', marginTop: 2 },
+  locationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
+  locationText: { fontSize: 12, color: '#64748b', marginLeft: 4, flex: 1 },
+  
+  cardDivider: { height: 1, backgroundColor: '#f1f5f9', marginVertical: 15 },
+  
+  cardBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  experienceBox: { flex: 1 },
+  feeBox: { flex: 1, alignItems: 'center' },
+  expValue: { fontSize: 14, fontWeight: '700', color: '#1e293b' },
+  expLabel: { fontSize: 11, color: '#94a3b8', marginTop: 2 },
+  feeValue: { fontSize: 14, fontWeight: '700', color: '#10b981' },
+  feeLabel: { fontSize: 11, color: '#94a3b8', marginTop: 2 },
+  
+  bookBtn: {
+    backgroundColor: '#6366f1',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  bookBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+
+  // Empty State
+  emptyContainer: { alignItems: 'center', marginTop: 60, paddingHorizontal: 40 },
+  emptyIconCircle: { 
+    width: 80, height: 80, borderRadius: 40, 
+    backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center', marginBottom: 20 
+  },
+  emptyText: { fontSize: 15, color: '#94a3b8', textAlign: 'center', lineHeight: 22 },
 });

@@ -1,6 +1,6 @@
 
 from pathlib import Path
-
+import os
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -12,7 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-esg6xa3ivh#4u6hh^x3rlr!t4-*l)fiju(edkox&fqbc67jm&_'
-GOOGLE_PLACES_API_KEY = 'AIzaSyD6soD8XDgZbS1a6QBVEHmVlsDjkNcXMKs'
+BAATO_API_KEY = 'bpk.r76TruuLdZ6qE8bFN98jLH71JSPgQ6XJpmdntS1-DSz6'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True

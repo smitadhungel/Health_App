@@ -60,12 +60,30 @@ export interface Appointment {
   appointment_date: string;
   appointment_time: string;
   reason: string;
-  symptoms: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  symptoms?: string;
+  notes?: string;
+  status: string;
+  status_display: string;
   duration_minutes: number;
   created_at: string;
   updated_at: string;
-  doctor_name:string
+
+  // Flat doctor fields returned by the detail endpoint
+  doctor_name: string;
+  doctor_email?: string;
+  doctor_phone?: string;
+  doctor_specialization: string;
+  doctor_qualification?: string;
+  doctor_experience_years?: number;
+  doctor_bio?: string;
+  doctor_profile_photo?: string;
+
+  // Flat clinic/fee fields
+  clinic_address?: string;
+  consultation_fee?: string;
+
+  // Patient name
+  patient_name: string;
 }
 
 export interface Medication {

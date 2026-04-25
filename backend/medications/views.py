@@ -1,7 +1,3 @@
-# ============================================
-# medications/views.py
-# ============================================
-
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -71,41 +67,36 @@ class MyMedicationsListView(generics.ListAPIView):
     """List all medications for current patient"""
     serializer_class = MedicationListSerializer
     permission_classes = [IsPatient]
-    
+
     def get_queryset(self):
         queryset = Medication.objects.filter(
-            patient=self.request.user
+            patient=self.request.user,
+            is_active=True,           # ✅ Always filter out deactivated meds
         ).select_related('prescribed_by', 'prescribed_by__user')
-        
-        # Filter by active status
-        is_active = self.request.query_params.get('active')
-        if is_active is not None:
-            queryset = queryset.filter(is_active=is_active.lower() == 'true')
-        
-        # Filter by expired
+
+        # Filter by expired — default is to HIDE expired meds
         show_expired = self.request.query_params.get('expired', 'false')
         if show_expired.lower() == 'false':
             queryset = queryset.filter(
                 Q(end_date__isnull=True) | Q(end_date__gte=date.today())
             )
-        
+
         # Filter by refill needed
         refill = self.request.query_params.get('refill')
         if refill and refill.lower() == 'true':
             queryset = queryset.filter(is_refill_needed=True)
-        
-        return queryset.order_by('-is_active', '-created_at')
-    
+
+        return queryset.order_by('-created_at')
+
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
-        
         return Response({
             'count': queryset.count(),
             'medications': serializer.data
         })
-
-
+    
+    
 class MedicationDetailView(generics.RetrieveAPIView):
     """Get detailed medication information"""
     serializer_class = MedicationSerializer

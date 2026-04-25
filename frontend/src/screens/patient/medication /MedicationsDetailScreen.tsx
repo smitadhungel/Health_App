@@ -9,6 +9,9 @@ import {
   ActivityIndicator,
   Modal,
   TextInput,
+  SafeAreaView,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -18,7 +21,6 @@ import { medicationsAPI } from '../../../services/api';
 import {
   ArrowLeft,
   Pill,
-  Package,
   Clock,
   FileText,
   User,
@@ -27,7 +29,7 @@ import {
   Edit3,
   AlertCircle,
   CheckCircle,
-  XCircle,
+  ChevronRight,
 } from 'lucide-react-native';
 
 type RootStackParamList = {
@@ -69,7 +71,7 @@ export default function MedicationDetailScreen() {
 
   const [medication, setMedication] = useState<Medication | null>(null);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<any[]>([]); 
   const [loading, setLoading] = useState(true);
   const [logModalVisible, setLogModalVisible] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
@@ -93,7 +95,6 @@ export default function MedicationDetailScreen() {
       setLogs(logsRes);
     } catch (error) {
       Alert.alert('Error', 'Failed to load medication details.');
-      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -116,51 +117,19 @@ export default function MedicationDetailScreen() {
         dosage_taken: selectedSchedule.dosage_count,
         notes: logNotes || undefined,
       });
-      Alert.alert('Success', 'Dose logged successfully.');
       setLogModalVisible(false);
       setLogNotes('');
-      setLogStatus('TAKEN');
       loadData();
+      Alert.alert('Success', 'Dose recorded.');
     } catch (error) {
       Alert.alert('Error', 'Failed to log dose.');
-      console.error(error);
     }
   };
 
   const handleRequestRefill = () => {
     if (medication) {
-      navigation.navigate('RequestRefill', {
-        medicationId,
-        medicationName: medication.name,
-      });
+      navigation.navigate('RequestRefill', { medicationId, medicationName: medication.name });
     }
-  };
-
-  const handleEdit = () => {
-    navigation.navigate('AddMedication', { medicationId });
-  };
-
-  const handleDelete = () => {
-    Alert.alert(
-      'Delete Medication',
-      'Are you sure you want to delete this medication?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await medicationsAPI.delete(medicationId);
-              Alert.alert('Success', 'Medication deleted.');
-              navigation.goBack();
-            } catch (error) {
-              Alert.alert('Error', 'Failed to delete medication.');
-            }
-          },
-        },
-      ]
-    );
   };
 
   if (loading) {
@@ -171,118 +140,140 @@ export default function MedicationDetailScreen() {
     );
   }
 
-  if (!medication) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text>Medication not found.</Text>
-      </View>
-    );
-  }
+  if (!medication) return null;
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <ArrowLeft size={24} color="#16a34a" />
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" />
+      
+      {/* Top Header */}
+      <View style={styles.headerNav}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
+          <ArrowLeft size={22} color="#1e293b" />
         </TouchableOpacity>
-        <Text style={styles.title} numberOfLines={1}>{medication.name}</Text>
-        <View style={styles.headerActions}>
-          <TouchableOpacity onPress={handleEdit} style={styles.iconButton}>
-            <Edit3 size={22} color="#16a34a" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleDelete} style={styles.iconButton}>
-            <Trash2 size={22} color="#ef4444" />
+        <Text style={styles.headerTitle}>Details</Text>
+        <View style={styles.headerRight}>
+          <TouchableOpacity onPress={() => navigation.navigate('AddMedication', { medicationId })} style={styles.iconBtn}>
+            <Edit3 size={20} color="#16a34a" />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Details Card */}
-      <View style={styles.card}>
-        <View style={styles.detailRow}>
-          <Pill size={20} color="#16a34a" />
-          <Text style={styles.detailLabel}>Dosage:</Text>
-          <Text style={styles.detailValue}>{medication.dosage}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Package size={20} color="#16a34a" />
-          <Text style={styles.detailLabel}>Form:</Text>
-          <Text style={styles.detailValue}>{medication.form_display}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Clock size={20} color="#16a34a" />
-          <Text style={styles.detailLabel}>Frequency:</Text>
-          <Text style={styles.detailValue}>{medication.frequency_display}</Text>
-        </View>
-        {medication.instructions ? (
-          <View style={styles.detailRow}>
-            <FileText size={20} color="#16a34a" />
-            <Text style={styles.detailLabel}>Instructions:</Text>
-            <Text style={styles.detailValue}>{medication.instructions}</Text>
-          </View>
-        ) : null}
-        <View style={styles.detailRow}>
-          <User size={20} color="#16a34a" />
-          <Text style={styles.detailLabel}>Prescribed by:</Text>
-          <Text style={styles.detailValue}>{medication.prescribed_by_name || 'N/A'}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Calendar size={20} color="#16a34a" />
-          <Text style={styles.detailLabel}>Start:</Text>
-          <Text style={styles.detailValue}>{medication.start_date}</Text>
-        </View>
-        {medication.end_date && (
-          <View style={styles.detailRow}>
-            <Calendar size={20} color="#16a34a" />
-            <Text style={styles.detailLabel}>End:</Text>
-            <Text style={styles.detailValue}>{medication.end_date}</Text>
-          </View>
-        )}
-      </View>
-
-      {/* Schedules Section */}
-      <Text style={styles.sectionTitle}>Dose Schedules</Text>
-      {schedules.length === 0 ? (
-        <Text style={styles.emptyText}>No schedules set.</Text>
-      ) : (
-        schedules.map((schedule) => (
-          <View key={schedule.id} style={styles.scheduleCard}>
-            <View style={styles.scheduleHeader}>
-              <Clock size={18} color="#16a34a" />
-              <Text style={styles.scheduleTime}>{schedule.time}</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        
+        {/* Main Info Card */}
+        <View style={styles.heroCard}>
+          <View style={styles.heroHeader}>
+            <View style={styles.pillIconBg}>
+              <Pill size={30} color="#fff" />
             </View>
-            <Text style={styles.scheduleDosage}>Dosage: {schedule.dosage_count}</Text>
-            {schedule.notes ? <Text style={styles.scheduleNotes}>Note: {schedule.notes}</Text> : null}
-            <TouchableOpacity style={styles.logButton} onPress={() => handleLogDose(schedule)}>
-              <CheckCircle size={16} color="#fff" />
-              <Text style={styles.logButtonText}>Log Dose</Text>
-            </TouchableOpacity>
+            <View style={styles.heroTextContent}>
+              <Text style={styles.medNameText}>{medication.name}</Text>
+              <Text style={styles.medDosageText}>{medication.dosage} • {medication.form_display}</Text>
+            </View>
           </View>
-        ))
-      )}
+          
+          <View style={styles.statsGrid}>
+            <View style={styles.statItem}>
+              <Clock size={16} color="#16a34a" />
+              <Text style={styles.statLabel}>Frequency</Text>
+              <Text style={styles.statValue}>{medication.frequency_display}</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <User size={16} color="#16a34a" />
+              <Text style={styles.statLabel}>Doctor</Text>
+              <Text style={styles.statValue} numberOfLines={1}>{medication.prescribed_by_name || 'N/A'}</Text>
+            </View>
+          </View>
+        </View>
 
-      {/* Refill Button */}
-      {medication.is_refill_needed && (
-        <TouchableOpacity style={styles.refillButton} onPress={handleRequestRefill}>
-          <AlertCircle size={20} color="#fff" />
-          <Text style={styles.refillButtonText}>Request Refill</Text>
+        {/* Refill Alert */}
+        {medication.is_refill_needed && (
+          <TouchableOpacity style={styles.refillAlert} onPress={handleRequestRefill}>
+            <AlertCircle size={20} color="#9a3412" />
+            <Text style={styles.refillAlertText}>Refill needed: Running low on stock</Text>
+            <ChevronRight size={18} color="#9a3412" />
+          </TouchableOpacity>
+        )}
+
+        {/* Details List */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Treatment Plan</Text>
+          <View style={styles.infoCard}>
+            <View style={styles.infoRow}>
+              <Calendar size={18} color="#64748b" />
+              <View style={styles.infoTextWrapper}>
+                <Text style={styles.infoLabel}>Start Date</Text>
+                <Text style={styles.infoValue}>{medication.start_date}</Text>
+              </View>
+            </View>
+            <View style={styles.infoRow}>
+              <FileText size={18} color="#64748b" />
+              <View style={styles.infoTextWrapper}>
+                <Text style={styles.infoLabel}>Instructions</Text>
+                <Text style={styles.infoValue}>{medication.instructions || 'Take as directed by your physician.'}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Schedule List */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Daily Schedule</Text>
+          {schedules.map((schedule) => (
+            <TouchableOpacity 
+              key={schedule.id} 
+              style={styles.scheduleRow} 
+              onPress={() => handleLogDose(schedule)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.timeBadge}>
+                <Text style={styles.timeText}>{schedule.time}</Text>
+              </View>
+              <View style={styles.scheduleInfo}>
+                <Text style={styles.dosageText}>{schedule.dosage_count} Unit(s)</Text>
+                {schedule.notes && <Text style={styles.noteText}>{schedule.notes}</Text>}
+              </View>
+              <View style={styles.logAction}>
+                <CheckCircle size={22} color="#16a34a" />
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Danger Zone */}
+        <TouchableOpacity 
+            onPress={() => {
+                Alert.alert("Delete", "Are you sure?", [
+                    {text: "Cancel"},
+                    {text: "Delete", style: 'destructive', onPress: async () => {
+                        await medicationsAPI.delete(medicationId);
+                        navigation.goBack();
+                    }}
+                ])
+            }}
+            style={styles.deleteBtn}
+        >
+          <Trash2 size={18} color="#ef4444" />
+          <Text style={styles.deleteBtnText}>Remove Medication</Text>
         </TouchableOpacity>
-      )}
 
-      {/* Log Modal */}
+        <View style={{ height: 50 }} />
+      </ScrollView>
+
+      {/* Modern Log Modal */}
       <Modal visible={logModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Log Dose</Text>
-            <Text style={styles.modalSubtitle}>{medication.name} at {selectedSchedule?.time}</Text>
+            <View style={styles.modalIndicator} />
+            <Text style={styles.modalTitle}>Record Dose</Text>
+            <Text style={styles.modalSub}>{medication.name} at {selectedSchedule?.time}</Text>
 
-            <Text style={styles.modalLabel}>Status</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
+            <View style={styles.pickerWrapper}>
+               <Picker
                 selectedValue={logStatus}
-                onValueChange={(value) => setLogStatus(value as LogStatus)}
-                style={styles.picker}
-                dropdownIconColor="#16a34a"
+                onValueChange={(itemValue) => setLogStatus(itemValue as LogStatus)}
               >
                 <Picker.Item label="Taken" value="TAKEN" />
                 <Picker.Item label="Missed" value="MISSED" />
@@ -291,260 +282,157 @@ export default function MedicationDetailScreen() {
               </Picker>
             </View>
 
-            <Text style={styles.modalLabel}>Notes (optional)</Text>
             <TextInput
               style={styles.modalInput}
+              placeholder="Add a note (optional)..."
               value={logNotes}
               onChangeText={setLogNotes}
-              placeholder="e.g., felt dizzy"
               multiline
-              placeholderTextColor="#9ca3af"
             />
 
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setLogModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.btnCancel} onPress={() => setLogModalVisible(false)}>
+                <Text style={styles.btnCancelText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.submitButton]}
-                onPress={submitLog}
-              >
-                <Text style={styles.submitButtonText}>Submit</Text>
+              <TouchableOpacity style={styles.btnSubmit} onPress={submitLog}>
+                <Text style={styles.btnSubmitText}>Confirm</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
-    </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    backgroundColor: '#f0fdf4',
-    flexGrow: 1,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f0fdf4',
-  },
-  header: {
+  safeArea: { flex: 1, backgroundColor: '#f8fafc' },
+  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  
+  headerNav: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  backButton: {
-    padding: 4,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#14532d',
-    flex: 1,
-    marginHorizontal: 10,
-  },
-  headerActions: {
-    flexDirection: 'row',
-  },
-  iconButton: {
-    marginLeft: 12,
-    padding: 4,
-  },
-  card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 20,
-    shadowColor: '#14532d',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0fdf4',
-  },
-  detailLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#4b5563',
-    width: 90,
-    marginLeft: 8,
-  },
-  detailValue: {
-    fontSize: 14,
-    color: '#14532d',
-    flex: 1,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#14532d',
-    marginBottom: 12,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: '#6b7280',
-    fontStyle: 'italic',
-    marginBottom: 16,
-  },
-  scheduleCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#14532d',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-    borderWidth: 1,
-    borderColor: '#dcfce7',
-  },
-  scheduleHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  scheduleTime: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#14532d',
-    marginLeft: 8,
-  },
-  scheduleDosage: {
-    fontSize: 14,
-    color: '#4b5563',
-    marginBottom: 4,
-  },
-  scheduleNotes: {
-    fontSize: 14,
-    color: '#6b7280',
-    fontStyle: 'italic',
-    marginBottom: 12,
-  },
-  logButton: {
-    flexDirection: 'row',
-    backgroundColor: '#16a34a',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 30,
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-  },
-  logButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 6,
-  },
-  refillButton: {
-    flexDirection: 'row',
-    backgroundColor: '#f59e0b',
-    padding: 16,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
-    marginBottom: 20,
-  },
-  refillButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    width: '90%',
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#14532d',
-    marginBottom: 4,
-  },
-  modalSubtitle: {
-    fontSize: 14,
-    color: '#4b5563',
-    marginBottom: 20,
-  },
-  modalLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#14532d',
-    marginTop: 16,
-    marginBottom: 6,
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: '#d1fae5',
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: '#f0fdf4',
-  },
-  picker: {
-    height: 50,
-    color: '#14532d',
-  },
-  modalInput: {
-    borderWidth: 1,
-    borderColor: '#d1fae5',
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-    backgroundColor: '#f0fdf4',
-    color: '#14532d',
-    textAlignVertical: 'top',
-    minHeight: 80,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 24,
-  },
-  modalButton: {
-    paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 30,
-    marginLeft: 10,
+    paddingVertical: 15,
+    backgroundColor: '#fff',
   },
-  cancelButton: {
-    backgroundColor: '#f3f4f6',
+  headerTitle: { fontSize: 17, fontWeight: '700', color: '#1e293b' },
+  headerRight: { flexDirection: 'row' },
+  iconBtn: { padding: 8, borderRadius: 12, backgroundColor: '#f1f5f9' },
+  
+  scrollContent: { padding: 20 },
+
+  // Hero Card
+  heroCard: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 20,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.05, shadowRadius: 20 },
+      android: { elevation: 4 }
+    }),
+    marginBottom: 20,
   },
-  cancelButtonText: {
-    color: '#4b5563',
-    fontWeight: '500',
+  heroHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  pillIconBg: { 
+    width: 60, height: 60, borderRadius: 20, backgroundColor: '#16a34a', 
+    justifyContent: 'center', alignItems: 'center' 
   },
-  submitButton: {
-    backgroundColor: '#16a34a',
+  heroTextContent: { marginLeft: 16 },
+  medNameText: { fontSize: 22, fontWeight: '800', color: '#1e293b' },
+  medDosageText: { fontSize: 14, color: '#64748b', fontWeight: '500', marginTop: 2 },
+  
+  statsGrid: { 
+    flexDirection: 'row', 
+    borderTopWidth: 1, 
+    borderTopColor: '#f1f5f9', 
+    paddingTop: 15 
   },
-  submitButtonText: {
-    color: '#fff',
-    fontWeight: '600',
+  statItem: { flex: 1, alignItems: 'center' },
+  statDivider: { width: 1, backgroundColor: '#f1f5f9' },
+  statLabel: { fontSize: 11, color: '#94a3b8', fontWeight: '600', textTransform: 'uppercase', marginBottom: 4 },
+  statValue: { fontSize: 14, color: '#1e293b', fontWeight: '700' },
+
+  // Sections
+  sectionContainer: { marginTop: 25 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1e293b', marginBottom: 15, marginLeft: 5 },
+  
+  infoCard: { backgroundColor: '#fff', borderRadius: 20, padding: 15 },
+  infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
+  infoTextWrapper: { marginLeft: 15 },
+  infoLabel: { fontSize: 12, color: '#94a3b8', fontWeight: '600' },
+  infoValue: { fontSize: 14, color: '#1e293b', fontWeight: '500', marginTop: 1 },
+
+  // Schedule Rows
+  scheduleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 20,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
   },
+  timeBadge: { 
+    backgroundColor: '#f0fdf4', 
+    paddingHorizontal: 12, 
+    paddingVertical: 8, 
+    borderRadius: 12 
+  },
+  timeText: { color: '#16a34a', fontWeight: '800', fontSize: 14 },
+  scheduleInfo: { flex: 1, marginLeft: 15 },
+  dosageText: { fontSize: 15, fontWeight: '700', color: '#1e293b' },
+  noteText: { fontSize: 12, color: '#64748b', marginTop: 2 },
+  logAction: { padding: 5 },
+
+  // Refill
+  refillAlert: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff7ed',
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#ffedd5',
+    marginBottom: 5,
+  },
+  refillAlertText: { flex: 1, marginLeft: 10, color: '#9a3412', fontWeight: '700', fontSize: 13 },
+
+  deleteBtn: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    marginTop: 40,
+    padding: 15
+  },
+  deleteBtnText: { color: '#ef4444', fontWeight: '700', marginLeft: 8 },
+
+  // Modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  modalContent: { 
+    backgroundColor: '#fff', 
+    borderTopLeftRadius: 30, 
+    borderTopRightRadius: 30, 
+    padding: 25, 
+    paddingBottom: 40 
+  },
+  modalIndicator: { width: 40, height: 5, backgroundColor: '#e2e8f0', alignSelf: 'center', borderRadius: 10, marginBottom: 20 },
+  modalTitle: { fontSize: 20, fontWeight: '800', color: '#1e293b' },
+  modalSub: { fontSize: 14, color: '#64748b', marginBottom: 20 },
+  pickerWrapper: { backgroundColor: '#f8fafc', borderRadius: 15, marginBottom: 15, overflow: 'hidden' },
+  modalInput: { 
+    backgroundColor: '#f8fafc', 
+    borderRadius: 15, 
+    padding: 15, 
+    height: 80, 
+    textAlignVertical: 'top', 
+    color: '#1e293b' 
+  },
+  modalButtons: { flexDirection: 'row', marginTop: 25 },
+  btnCancel: { flex: 1, padding: 16, alignItems: 'center' },
+  btnCancelText: { color: '#64748b', fontWeight: '700' },
+  btnSubmit: { flex: 2, backgroundColor: '#16a34a', padding: 16, borderRadius: 15, alignItems: 'center' },
+  btnSubmitText: { color: '#fff', fontWeight: '800' },
 });

@@ -8,12 +8,15 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
+import{  SafeAreaView} from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { medicationsAPI } from '../../../services/api';
-import { Package, FileText, MessageSquare, Send } from 'lucide-react-native';
+import { Package, FileText, MessageSquare, Send, ArrowLeft } from 'lucide-react-native';
 
 type RootStackParamList = {
   RequestRefill: { medicationId: number; medicationName: string };
@@ -57,141 +60,222 @@ export default function RefillRequestScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-      <Text style={styles.title}>Request Refill</Text>
-      <Text style={styles.medName}>{medicationName}</Text>
-
-      <Text style={styles.label}>Quantity *</Text>
-      <View style={styles.inputWrapper}>
-        <Package size={20} color="#16a34a" style={styles.inputIcon} />
-        <TextInput
-          style={styles.input}
-          value={quantity}
-          onChangeText={setQuantity}
-          keyboardType="numeric"
-          placeholder="e.g., 30"
-          placeholderTextColor="#9ca3af"
-        />
-      </View>
-
-      <Text style={styles.label}>Pharmacy Name (optional)</Text>
-      <View style={styles.inputWrapper}>
-        <FileText size={20} color="#16a34a" style={styles.inputIcon} />
-        <TextInput
-          style={styles.input}
-          value={pharmacyName}
-          onChangeText={setPharmacyName}
-          placeholder="e.g., CVS Pharmacy"
-          placeholderTextColor="#9ca3af"
-        />
-      </View>
-
-      <Text style={styles.label}>Notes (optional)</Text>
-      <View style={[styles.inputWrapper, styles.textAreaWrapper]}>
-        <MessageSquare size={20} color="#16a34a" style={[styles.inputIcon, { alignSelf: 'flex-start', marginTop: 14 }]} />
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          value={notes}
-          onChangeText={setNotes}
-          placeholder="Any special instructions"
-          placeholderTextColor="#9ca3af"
-          multiline
-          numberOfLines={3}
-          textAlignVertical="top"
-        />
-      </View>
-
-      <TouchableOpacity
-        style={[styles.submitButton, loading && styles.disabledButton]}
-        onPress={handleSubmit}
-        disabled={loading}
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
       >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <>
-            <Send size={20} color="#fff" />
-            <Text style={styles.submitText}>Submit Request</Text>
-          </>
-        )}
-      </TouchableOpacity>
-    </ScrollView>
+        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <ArrowLeft size={24} color="#14532d" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Refill Request</Text>
+            <View style={{ width: 40 }} /> 
+          </View>
+
+          {/* Med Info Card */}
+          <View style={styles.heroCard}>
+            <Text style={styles.heroLabel}>Refilling for</Text>
+            <Text style={styles.medTitle}>{medicationName}</Text>
+          </View>
+
+          <View style={styles.formCard}>
+            {/* Quantity Input */}
+            <Text style={styles.label}>Quantity <Text style={styles.required}>*</Text></Text>
+            <View style={styles.inputWrapper}>
+              <View style={styles.iconCircle}>
+                <Package size={18} color="#16a34a" />
+              </View>
+              <TextInput
+                style={styles.input}
+                value={quantity}
+                onChangeText={setQuantity}
+                keyboardType="numeric"
+                placeholder="e.g., 30"
+                placeholderTextColor="#94a3b8"
+              />
+            </View>
+
+            {/* Pharmacy Input */}
+            <Text style={styles.label}>Pharmacy Name</Text>
+            <View style={styles.inputWrapper}>
+              <View style={styles.iconCircle}>
+                <FileText size={18} color="#16a34a" />
+              </View>
+              <TextInput
+                style={styles.input}
+                value={pharmacyName}
+                onChangeText={setPharmacyName}
+                placeholder="e.g., CVS Pharmacy"
+                placeholderTextColor="#94a3b8"
+              />
+            </View>
+
+            {/* Notes Input */}
+            <Text style={styles.label}>Special Instructions</Text>
+            <View style={[styles.inputWrapper, styles.textAreaWrapper]}>
+              <View style={[styles.iconCircle, { marginTop: 12 }]}>
+                <MessageSquare size={18} color="#16a34a" />
+              </View>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={notes}
+                onChangeText={setNotes}
+                placeholder="Notes for your doctor or pharmacist..."
+                placeholderTextColor="#94a3b8"
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[styles.submitButton, loading && styles.disabledButton]}
+              onPress={handleSubmit}
+              disabled={loading}
+              activeOpacity={0.8}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Text style={styles.submitText}>Submit Request</Text>
+                  <Send size={18} color="#fff" />
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
   container: {
-    padding: 20,
-    backgroundColor: '#f0fdf4',
-    flexGrow: 1,
+    padding: 24,
+    paddingBottom: 40,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#14532d',
-    marginBottom: 8,
-  },
-  medName: {
-    fontSize: 16,
-    color: '#4b5563',
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 24,
-    fontStyle: 'italic',
+  },
+  backButton: {
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#14532d',
+  },
+  heroCard: {
+    backgroundColor: '#16a34a',
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 24,
+    shadowColor: '#16a34a',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
+    elevation: 8,
+  },
+  heroLabel: {
+    color: '#dcfce7',
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  medTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#ffffff',
+  },
+  formCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10 },
+      android: { elevation: 2 },
+    }),
   },
   label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#064e3b',
-    marginBottom: 6,
-    marginTop: 10,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 8,
+    marginTop: 16,
+  },
+  required: {
+    color: '#ef4444',
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#f8fafc',
     borderWidth: 1,
-    borderColor: '#d1fae5',
-    borderRadius: 12,
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 14,
-    marginBottom: 12,
+    borderColor: '#e2e8f0',
+    borderRadius: 16,
+    paddingHorizontal: 12,
   },
-  inputIcon: {
-    marginRight: 8,
+  iconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
   },
   input: {
     flex: 1,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#14532d',
+    color: '#1e293b',
+    fontWeight: '500',
   },
   textAreaWrapper: {
     alignItems: 'flex-start',
+    paddingTop: 4,
   },
   textArea: {
-    minHeight: 100,
+    minHeight: 110,
     textAlignVertical: 'top',
   },
   submitButton: {
     flexDirection: 'row',
     backgroundColor: '#16a34a',
-    paddingVertical: 16,
-    borderRadius: 30,
+    paddingVertical: 18,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 24,
-    marginBottom: 20,
-    shadowColor: '#16a34a',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 3,
+    marginTop: 32,
+    gap: 10,
   },
   disabledButton: {
-    backgroundColor: '#86efac',
+    backgroundColor: '#94a3b8',
   },
   submitText: {
     color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '700',
-    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: '800',
   },
 });

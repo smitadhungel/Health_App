@@ -16,6 +16,7 @@ export type PatientStackParamList = {
   Documents: undefined;
   DocumentDetails: { documentId: number };
   MyAppointments: undefined;
+  AppointmentDetails: { appointmentId: number }; 
   DoctorRegistration: undefined;
   PlaceDetails: undefined;
   Prescriptions: undefined;

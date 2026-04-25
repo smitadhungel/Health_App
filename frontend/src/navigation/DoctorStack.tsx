@@ -1,14 +1,19 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { DoctorStackParamList } from './types';
+
+// doctors personal platform 
 import DoctorsDashboard from '../screens/doctor/DoctorsDashboard';
 import DoctorDetails from '../screens/doctor/DoctorDetails';
 import SetAvailabilityScreen from '../screens/doctor/SetAvailabilityScreen';
 import AppointmentsCalendar from '../screens/doctor/AppointmentsCalendar';
-import PatientDetails from '../screens/doctor/PatientDetails';
-import { DoctorStackParamList } from './types';
-import AppointmentDetails from '../screens/doctor/AppointmentDetails';
 
+// these are to manage the patients 
+import PatientDetails from '../screens/doctor/PatientDetails';
+import AppointmentDetails from '../screens/doctor/AppointmentDetails';
 import SharedDocumentsScreen from '../screens/doctor/SharedDocumentsScreen';
+
+// prescription screen for the doctor 
 import WritePrescriptionScreen from '../screens/doctor/WritePrescriptionScreen';
 import DoctorPrescriptionsScreen from '../screens/doctor/DoctorPrescriptionsScreen';
 import PrescriptionDetailScreen from '../screens/doctor/PrescriptionDetailScreen';
@@ -26,10 +31,7 @@ export default function DoctorStack() {
       <Stack.Screen 
         name="DoctorDetails" 
         component={DoctorDetails} 
-        options={{ 
-         title: 'Professional Information',
-         headerBackVisible: false, // Hide back button during onboarding
-        }}
+         options={{ headerShown: false }}
       />
       <Stack.Screen 
         name="SetAvailability" 
@@ -52,10 +54,24 @@ export default function DoctorStack() {
         options={{ headerShown: false}}
       />
 
-      <Stack.Screen name="SharedDocuments" component={SharedDocumentsScreen} options={{ title: 'Patient Documents' }} />
-      <Stack.Screen name="WritePrescription" component={WritePrescriptionScreen} options={{ title: 'Write Prescription' }} />
-      <Stack.Screen name="DoctorPrescriptions" component={DoctorPrescriptionsScreen} options={{ title: 'My Prescriptions' }} />
-      <Stack.Screen name="PrescriptionDetail" component={PrescriptionDetailScreen} options={{ title: 'Prescription Detail' }} />
+      <Stack.Screen 
+      name="SharedDocuments" 
+      component={SharedDocumentsScreen} 
+       options={{ headerShown: false }} />
+
+      <Stack.Screen 
+      name="WritePrescription" 
+      component={WritePrescriptionScreen} 
+      options={{ headerShown: false }} />
+
+      <Stack.Screen 
+      name="DoctorPrescriptions" 
+      component={DoctorPrescriptionsScreen} 
+       options={{ headerShown: false }} />
+
+      <Stack.Screen name="PrescriptionDetail" 
+      component={PrescriptionDetailScreen} 
+       options={{ headerShown: false }} />
 
     </Stack.Navigator>
   );

@@ -49,7 +49,7 @@ class Appointment(models.Model):
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+    notes = models.TextField(blank=True, null=True)
     class Meta:
         db_table = 'appointments'
         ordering = ['-appointment_date', '-appointment_time']

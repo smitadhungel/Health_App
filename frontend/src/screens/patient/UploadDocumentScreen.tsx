@@ -1,30 +1,17 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-  TextInput,
-  ScrollView,
+import {View, Text, StyleSheet, TouchableOpacity, Alert,
+  ActivityIndicator, TextInput, ScrollView, StatusBar,Platform
 } from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context'
 import Icon from 'react-native-vector-icons/Ionicons';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { documentsAPI } from '../../services/api';
 import { Picker } from '@react-native-picker/picker';
 
 const CATEGORIES = [
-  'LAB_REPORT',
-  'PRESCRIPTION',
-  'SCAN',
-  'MRI',
-  'CT_SCAN',
-  'BLOOD_TEST',
-  'VACCINATION',
-  'DISCHARGE_SUMMARY',
-  'MEDICAL_CERTIFICATE',
-  'OTHER',
+  'LAB_REPORT', 'PRESCRIPTION', 'SCAN', 'MRI', 'CT_SCAN',
+  'BLOOD_TEST', 'VACCINATION', 'DISCHARGE_SUMMARY',
+  'MEDICAL_CERTIFICATE', 'OTHER',
 ];
 
 export default function UploadDocumentScreen({ navigation }: any) {
@@ -68,138 +55,109 @@ export default function UploadDocumentScreen({ navigation }: any) {
         uri: file.uri,
         type: file.type || 'image/jpeg',
         name: file.fileName || file.name || 'document.jpg',
-      });
-      console.log('Uploading document with fields:', { title, category, documentDate, description });
-      console.log('File info:', file);
-      const response = await documentsAPI.upload(formData);
-      console.log('Upload success:', response);
+      } as any);
+
+      await documentsAPI.upload(formData);
       Alert.alert('Success', 'Document uploaded successfully', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch (error: any) {
-      console.error('Upload error:', error);
-      if (error.response) {
-        console.error('Error response data:', error.response.data);
-        console.error('Error status:', error.response.status);
-        const errorData = error.response.data;
-        let errorMessage = 'Failed to upload document';
-        if (typeof errorData === 'string') errorMessage = errorData;
-        else if (errorData.detail) errorMessage = errorData.detail;
-        else if (errorData.message) errorMessage = errorData.message;
-        else if (errorData.error) errorMessage = errorData.error;
-        else {
-          const firstKey = Object.keys(errorData)[0];
-          if (firstKey && errorData[firstKey]) {
-            errorMessage = `${firstKey}: ${Array.isArray(errorData[firstKey]) ? errorData[firstKey][0] : errorData[firstKey]}`;
-          }
-        }
-        Alert.alert('Upload Failed', errorMessage);
-      } else if (error.request) {
-        Alert.alert('Network Error', 'No response from server. Please check your connection.');
-      } else {
-        Alert.alert('Error', 'Failed to upload document. Please try again.');
-      }
+      Alert.alert('Upload Failed', 'Check your connection and try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-back" size={24} color="#16a34a" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Upload Document</Text>
-        <View style={{ width: 40 }} />
-      </View>
-
-      <View style={styles.form}>
-        {/* Title Field */}
-        <View style={styles.fieldContainer}>
-          <View style={styles.labelContainer}>
-            <Icon name="document-text-outline" size={18} color="#16a34a" />
-            <Text style={styles.label}>Title</Text>
-            <Text style={styles.required}>*</Text>
-          </View>
-          <TextInput
-            style={styles.input}
-            value={title}
-            onChangeText={setTitle}
-            placeholder="e.g., Blood Test Report"
-            placeholderTextColor="#9ca3af"
-          />
+    <View style={styles.mainContainer}>
+      <StatusBar barStyle="dark-content" />
+      <SafeAreaView style={styles.headerArea}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>New Record</Text>
+          <View style={{ width: 40 }} />
         </View>
+      </SafeAreaView>
 
-        {/* Category Field */}
-        <View style={styles.fieldContainer}>
-          <View style={styles.labelContainer}>
-            <Icon name="folder-outline" size={18} color="#16a34a" />
-            <Text style={styles.label}>Category</Text>
+      <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
+        <View style={styles.card}>
+          {/* Title Field */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>DOCUMENT TITLE <Text style={styles.required}>*</Text></Text>
+            <View style={styles.inputWrapper}>
+              <Icon name="document-text-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                value={title}
+                onChangeText={setTitle}
+                placeholder="e.g. Annual Blood Test"
+                placeholderTextColor="#94a3b8"
+              />
+            </View>
           </View>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={category}
-              onValueChange={setCategory}
-              style={styles.picker}
-              dropdownIconColor="#16a34a"
+
+          {/* Category Field */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>CATEGORY</Text>
+            <View style={styles.pickerWrapper}>
+              <Icon name="folder-open-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+              <Picker
+                selectedValue={category}
+                onValueChange={setCategory}
+                style={styles.picker}
+                dropdownIconColor="#16a34a"
+              >
+                {CATEGORIES.map((cat) => (
+                  <Picker.Item key={cat} label={cat.replace(/_/g, ' ')} value={cat} />
+                ))}
+              </Picker>
+            </View>
+          </View>
+
+          {/* Date Field */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>DOCUMENT DATE</Text>
+            <View style={styles.inputWrapper}>
+              <Icon name="calendar-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                value={documentDate}
+                onChangeText={setDocumentDate}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor="#94a3b8"
+              />
+            </View>
+          </View>
+
+          {/* Description */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>DESCRIPTION (OPTIONAL)</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              placeholder="Add extra details here..."
+              placeholderTextColor="#94a3b8"
+            />
+          </View>
+
+          {/* File Picker */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>ATTACHMENT <Text style={styles.required}>*</Text></Text>
+            <TouchableOpacity 
+              style={[styles.uploadBox, file && styles.uploadBoxActive]} 
+              onPress={pickImage}
             >
-              {CATEGORIES.map((cat) => (
-                <Picker.Item key={cat} label={cat.replace('_', ' ')} value={cat} />
-              ))}
-            </Picker>
+              <Icon name={file ? "checkmark-circle" : "cloud-upload-outline"} size={28} color={file ? "#16a34a" : "#64748b"} />
+              <Text style={[styles.uploadBoxText, file && styles.uploadTextActive]}>
+                {file ? (file.fileName || 'Image Selected') : 'Tap to select an image'}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Document Date Field */}
-        <View style={styles.fieldContainer}>
-          <View style={styles.labelContainer}>
-            <Icon name="calendar-outline" size={18} color="#16a34a" />
-            <Text style={styles.label}>Document Date (optional)</Text>
-          </View>
-          <TextInput
-            style={styles.input}
-            value={documentDate}
-            onChangeText={setDocumentDate}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor="#9ca3af"
-          />
-        </View>
-
-        {/* Description Field */}
-        <View style={styles.fieldContainer}>
-          <View style={styles.labelContainer}>
-            <Icon name="create-outline" size={18} color="#16a34a" />
-            <Text style={styles.label}>Description (optional)</Text>
-          </View>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={description}
-            onChangeText={setDescription}
-            multiline
-            numberOfLines={4}
-            placeholderTextColor="#9ca3af"
-          />
-        </View>
-
-        {/* File Picker */}
-        <View style={styles.fieldContainer}>
-          <View style={styles.labelContainer}>
-            <Icon name="attach-outline" size={18} color="#16a34a" />
-            <Text style={styles.label}>File</Text>
-            <Text style={styles.required}>*</Text>
-          </View>
-          <TouchableOpacity style={styles.filePicker} onPress={pickImage}>
-            <Icon name="cloud-upload-outline" size={24} color="#16a34a" />
-            <Text style={styles.filePickerText} numberOfLines={1}>
-              {file ? file.fileName || file.name || 'File selected' : 'Tap to select a file (PDF, Image)'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Upload Button */}
         <TouchableOpacity
-          style={[styles.uploadButton, loading && styles.disabledButton]}
+          style={[styles.mainBtn, loading && styles.mainBtnDisabled]}
           onPress={handleUpload}
           disabled={loading}
         >
@@ -207,125 +165,59 @@ export default function UploadDocumentScreen({ navigation }: any) {
             <ActivityIndicator color="#fff" />
           ) : (
             <>
-              <Icon name="cloud-upload-outline" size={22} color="#fff" />
-              <Text style={styles.uploadButtonText}>Upload Document</Text>
+              <Text style={styles.mainBtnText}>Upload Document</Text>
+              <Icon name="arrow-forward" size={18} color="#fff" style={{ marginLeft: 8 }} />
             </>
           )}
         </TouchableOpacity>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f0fdf4',
+  mainContainer: { flex: 1, backgroundColor: '#f8fafc' },
+  headerArea: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  header: { 
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', 
+    paddingHorizontal: 16, paddingVertical: 12 
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#bbf7d0',
+  headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#14532d', marginTop: 10, marginBottom: 10 },
+  iconButton: { padding: 4 },
+  scrollBody: { padding: 16 },
+  card: { 
+    backgroundColor: '#fff', borderRadius: 20, padding: 20, 
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10 },
+      android: { elevation: 3 }
+    })
   },
-  backButton: {
-    padding: 4,
+  inputGroup: { marginBottom: 20 },
+  label: { fontSize: 11, fontWeight: '800', color: '#64748b', marginBottom: 8, letterSpacing: 0.5 },
+  required: { color: '#ef4444' },
+  inputWrapper: { 
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#f8fafc', 
+    borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', paddingHorizontal: 12 
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#14532d',
+  inputIcon: { marginRight: 10 },
+  input: { flex: 1, height: 50, fontSize: 15, color: '#1e293b' },
+  pickerWrapper: { 
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#f8fafc', 
+    borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', paddingLeft: 12 
   },
-  form: {
-    padding: 20,
+  picker: { flex: 1, height: 50, color: '#1e293b' },
+  textArea: { height: 100, textAlignVertical: 'top', backgroundColor: '#f8fafc', borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', padding: 12, marginTop: 4 },
+  uploadBox: { 
+    backgroundColor: '#f1f5f9', borderStyle: 'dashed', borderWidth: 2, borderColor: '#cbd5e1', 
+    borderRadius: 16, padding: 24, alignItems: 'center', justifyContent: 'center' 
   },
-  fieldContainer: {
-    marginBottom: 20,
+  uploadBoxActive: { backgroundColor: '#f0fdf4', borderColor: '#16a34a' },
+  uploadBoxText: { marginTop: 8, fontSize: 14, color: '#64748b', fontWeight: '500' },
+  uploadTextActive: { color: '#16a34a' },
+  mainBtn: { 
+    backgroundColor: '#16a34a', height: 56, borderRadius: 16, flexDirection: 'row', 
+    alignItems: 'center', justifyContent: 'center', marginTop: 12, marginBottom: 40 
   },
-  labelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#14532d',
-    marginLeft: 6,
-  },
-  required: {
-    color: '#ef4444',
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 4,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d1fae5',
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-    backgroundColor: '#ffffff',
-    color: '#14532d',
-  },
-  textArea: {
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: '#d1fae5',
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: '#ffffff',
-  },
-  picker: {
-    height: 50,
-    color: '#14532d',
-  },
-  filePicker: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#16a34a',
-    borderRadius: 12,
-    padding: 14,
-    backgroundColor: '#ecfdf5',
-    borderStyle: 'dashed',
-  },
-  filePickerText: {
-    marginLeft: 12,
-    fontSize: 14,
-    color: '#16a34a',
-    flex: 1,
-  },
-  uploadButton: {
-    flexDirection: 'row',
-    backgroundColor: '#16a34a',
-    paddingVertical: 16,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-    marginBottom: 30,
-    shadowColor: '#16a34a',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  disabledButton: {
-    backgroundColor: '#86efac',
-  },
-  uploadButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
+  mainBtnDisabled: { backgroundColor: '#86efac' },
+  mainBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

@@ -2,12 +2,21 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList,
   TouchableOpacity, ActivityIndicator, RefreshControl,
+  StatusBar, Platform
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { PatientStackParamList } from '../../navigation/types';
 import { prescriptionsAPI } from '../../services/api';
-import { ClipboardList, ChevronRight, Pill } from 'lucide-react-native';
+import { 
+  ClipboardList, 
+  ChevronRight, 
+  Pill, 
+  FileText, 
+  CheckCircle, 
+  Eye,
+  Plus
+} from 'lucide-react-native';
 
 type Nav = NativeStackNavigationProp<PatientStackParamList, 'Prescriptions'>;
 
@@ -49,7 +58,10 @@ export default function PrescriptionsScreen() {
 
   useEffect(() => { fetchPrescriptions(); }, [fetchPrescriptions]);
 
-  const onRefresh = () => { setRefreshing(true); fetchPrescriptions(); };
+  // Dashboard Stats Logic
+  const total = prescriptions.length;
+  const issued = prescriptions.filter(p => p.status === 'ISSUED').length;
+  const viewed = prescriptions.filter(p => p.status === 'VIEWED').length;
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '—';
@@ -58,24 +70,17 @@ export default function PrescriptionsScreen() {
     });
   };
 
-  if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#7c3aed" />
-      </View>
-    );
-  }
-
   const renderItem = ({ item }: { item: Prescription }) => {
     const color = statusColors[item.status] || statusColors.VIEWED;
     return (
       <TouchableOpacity
         style={styles.card}
         onPress={() => navigation.navigate('PrescriptionDetail', { prescriptionId: item.id })}
+        activeOpacity={0.7}
       >
         <View style={styles.cardHeader}>
           <View style={styles.iconBox}>
-            <ClipboardList size={22} color="#7c3aed" />
+            <FileText size={20} color="#16a34a" />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.doctorName}>Dr. {item.doctor_name}</Text>
@@ -86,15 +91,19 @@ export default function PrescriptionsScreen() {
           </View>
         </View>
 
-        <Text style={styles.diagnosis} numberOfLines={2}>{item.diagnosis}</Text>
+        <Text style={styles.diagnosis} numberOfLines={2}>
+          {item.diagnosis || "No diagnosis provided"}
+        </Text>
 
         <View style={styles.cardFooter}>
           <View style={styles.medCount}>
-            <Pill size={14} color="#7c3aed" />
+            <Pill size={14} color="#16a34a" />
             <Text style={styles.medCountText}>{item.medication_count} medication(s)</Text>
           </View>
-          <Text style={styles.date}>{formatDate(item.issued_at || item.created_at)}</Text>
-          <ChevronRight size={18} color="#9ca3af" />
+          <View style={styles.footerRight}>
+             <Text style={styles.date}>{formatDate(item.issued_at || item.created_at)}</Text>
+             <ChevronRight size={18} color="#9ca3af" />
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -102,55 +111,140 @@ export default function PrescriptionsScreen() {
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={prescriptions}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderItem}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        contentContainerStyle={prescriptions.length === 0 ? styles.emptyContainer : { padding: 16 }}
-        ListEmptyComponent={
-          <View style={styles.emptyBox}>
-            <ClipboardList size={56} color="#c4b5fd" />
-            <Text style={styles.emptyTitle}>No Prescriptions Yet</Text>
-            <Text style={styles.emptySubtitle}>
-              Prescriptions from your doctors will appear here
-            </Text>
-          </View>
-        }
-      />
+      <StatusBar barStyle="dark-content" />
+      
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Prescriptions</Text>
+      </View>
+
+      {/* Stats Dashboard Row */}
+      <View style={styles.statsRow}>
+        <View style={styles.statItem}>
+          <ClipboardList size={22} color="#16a34a" />
+          <Text style={styles.statValue}>{total}</Text>
+          <Text style={styles.statLabel}>Total</Text>
+        </View>
+        <View style={[styles.statItem, styles.statBorder]}>
+          <CheckCircle size={22} color="#10b981" />
+          <Text style={styles.statValue}>{issued}</Text>
+          <Text style={styles.statLabel}>Issued</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Eye size={22} color="#6b7280" />
+          <Text style={styles.statValue}>{viewed}</Text>
+          <Text style={styles.statLabel}>Viewed</Text>
+        </View>
+      </View>
+
+      {/* Section Title */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>My History</Text>
+      </View>
+
+      {loading && !refreshing ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#16a34a" />
+        </View>
+      ) : (
+        <FlatList
+          data={prescriptions}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderItem}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => {setRefreshing(true); fetchPrescriptions();}} tintColor="#16a34a" />}
+          contentContainerStyle={prescriptions.length === 0 ? styles.emptyContainer : { paddingHorizontal: 20, paddingBottom: 40 }}
+          ListEmptyComponent={
+            <View style={styles.emptyBox}>
+              <ClipboardList size={56} color="#bbf7d0" />
+              <Text style={styles.emptyTitle}>No Prescriptions Yet</Text>
+              <Text style={styles.emptySubtitle}>Prescriptions from your doctors will appear here</Text>
+            </View>
+          }
+        />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f0fdf4' }, // Light mint background
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  card: {
-    backgroundColor: '#fff', borderRadius: 16, padding: 16,
-    marginBottom: 12, elevation: 2,
-    shadowColor: '#14532d', shadowOffset: { width: 0, height: 2 }, // Dark green shadow
-    shadowOpacity: 0.07, shadowRadius: 4,
-    borderWidth: 1, borderColor: '#bbf7d0', // Added soft green border
+  container: { flex: 1, backgroundColor: '#f0fdf4' },
+  header: {
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingHorizontal: 20,
+    paddingBottom: 10,
   },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  iconBox: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: '#dcfce7', justifyContent: 'center', // Light lime-green icon box
-    alignItems: 'center', marginRight: 10,
-  },
-  doctorName: { fontSize: 15, fontWeight: '700', color: '#14532d' }, // Forest green
-  specialization: { fontSize: 12, color: '#6b7280', marginTop: 1 },
-  statusBadge: {
-    paddingHorizontal: 10, paddingVertical: 4,
+  headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#14532d', marginTop: 10, marginBottom: 0 },
+  
+  // Stats Row
+  statsRow: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    marginHorizontal: 20,
+    marginTop: 10,
     borderRadius: 20,
-    backgroundColor: '#f0fdf4', // Matching badge background
+    paddingVertical: 16,
+    justifyContent: 'space-around',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
   },
-  statusText: { fontSize: 11, fontWeight: '600', color: '#166534' },
-  diagnosis: { fontSize: 13, color: '#374151', marginBottom: 10, lineHeight: 18 },
-  cardFooter: { flexDirection: 'row', alignItems: 'center' },
-  medCount: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 4 },
-  medCountText: { fontSize: 12, color: '#22c55e', fontWeight: '600' }, // Vibrant green for counts
-  date: { fontSize: 12, color: '#9ca3af', marginRight: 6 },
+  statItem: { alignItems: 'center', flex: 1 },
+  statBorder: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: '#f1f5f9' },
+  statValue: { fontSize: 18, fontWeight: '800', color: '#1e293b', marginTop: 4 },
+  statLabel: { fontSize: 12, fontWeight: '500', color: '#64748b' },
+
+  // Section Header
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: 25,
+    marginBottom: 10,
+  },
+  sectionTitle: { fontSize: 20, fontWeight: 'bold', color: '#14532d' },
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  addBtnText: { color: '#16a34a', fontWeight: 'bold', fontSize: 16 },
+
+  // Card Styling
+  card: {
+    backgroundColor: '#fff', 
+    borderRadius: 20, 
+    padding: 16,
+    marginBottom: 16, 
+    elevation: 2,
+    shadowColor: '#000', 
+    shadowOpacity: 0.04, 
+    shadowRadius: 8,
+  },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  iconBox: {
+    width: 44, height: 44, borderRadius: 14,
+    backgroundColor: '#f0fdf4', justifyContent: 'center',
+    alignItems: 'center', marginRight: 12,
+  },
+  doctorName: { fontSize: 16, fontWeight: '700', color: '#1e293b' },
+  specialization: { fontSize: 13, color: '#16a34a', fontWeight: '600', marginTop: 2 },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  statusText: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
+  diagnosis: { fontSize: 14, color: '#475569', marginBottom: 14, lineHeight: 20 },
+  
+  cardFooter: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
+    paddingTop: 12
+  },
+  medCount: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  medCountText: { fontSize: 13, color: '#16a34a', fontWeight: '600' },
+  footerRight: { flexDirection: 'row', alignItems: 'center' },
+  date: { fontSize: 13, color: '#64748b', marginRight: 4, fontWeight: '500' },
+
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyBox: { alignItems: 'center', padding: 40 },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: '#14532d', marginTop: 16 },
