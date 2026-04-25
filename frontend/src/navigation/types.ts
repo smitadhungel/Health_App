@@ -1,7 +1,7 @@
 export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
-  Landing:undefined;
+  Landing: undefined;
 };
 
 export type PatientStackParamList = {
@@ -16,7 +16,7 @@ export type PatientStackParamList = {
   Documents: undefined;
   DocumentDetails: { documentId: number };
   MyAppointments: undefined;
-  AppointmentDetails: { appointmentId: number }; 
+  AppointmentDetails: { appointmentId: number };
   DoctorRegistration: undefined;
   PlaceDetails: undefined;
   Prescriptions: undefined;
@@ -25,8 +25,8 @@ export type PatientStackParamList = {
 
 export type DoctorStackParamList = {
   DoctorsDashboard: undefined;
+  DoctorDetails: undefined;        // ← fixed: was { doctorId: number } | undefined
   AppointmentDetails: { appointmentId: number };
-  DoctorDetails: { doctorId: number } | undefined;
   SetAvailability: undefined;
   AppointmentsCalendar: { date?: string };
   PatientDetails: { patientId: number };

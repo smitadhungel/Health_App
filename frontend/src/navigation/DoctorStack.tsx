@@ -28,7 +28,7 @@ export default function DoctorStack() {
         component={DoctorsDashboard} 
         options={{ headerShown: false }}
       />
-      <Stack.Screen 
+        <Stack.Screen 
         name="DoctorDetails" 
         component={DoctorDetails} 
          options={{ headerShown: false }}

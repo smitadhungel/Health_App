@@ -10,7 +10,7 @@ import {
   ScrollView,
   StatusBar,
 } from 'react-native';
-import {  SafeAreaView} from 'react-native-safe-area-context'
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Calendar } from 'react-native-calendars';
@@ -19,19 +19,9 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { appointmentsAPI, doctorsAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { DoctorStackParamList } from '../../navigation/types';
 
-// --- Types ---
-type RootStackParamList = {
-  DoctorDetails: undefined;
-  AppointmentDetails: { appointmentId: number };
-  PatientDetails: { patientId: string };
-  SetAvailability: undefined;
-  AppointmentsCalendar: { date?: string };
-  SharedDocuments: undefined;
-  DoctorPrescriptions: undefined;
-};
-
-type DoctorDashboardNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type DoctorDashboardNavigationProp = NativeStackNavigationProp<DoctorStackParamList>;
 
 interface Appointment {
   id: number;
@@ -57,7 +47,12 @@ interface DashboardStats {
 }
 
 interface MarkedDates {
-  [date: string]: { marked: boolean; dotColor?: string; selected?: boolean; selectedColor?: string; };
+  [date: string]: {
+    marked: boolean;
+    dotColor?: string;
+    selected?: boolean;
+    selectedColor?: string;
+  };
 }
 
 const extractArray = (data: any): any[] => {
@@ -71,7 +66,6 @@ export default function DoctorDashboard() {
   const navigation = useNavigation<DoctorDashboardNavigationProp>();
   const { signOut } = useAuth();
 
-  // 1. State Hooks
   const [isCheckingProfile, setIsCheckingProfile] = useState(true);
   const [doctor, setDoctor] = useState<any>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -88,66 +82,90 @@ export default function DoctorDashboard() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [activeTab, setActiveTab] = useState<'appointments' | 'patients'>('appointments');
 
-  // 2. Data Fetching Hook
   const fetchDashboardData = useCallback(async () => {
     try {
-      const [appointmentsResult] = await Promise.allSettled([
-        appointmentsAPI.getDoctorAppointments(),
-        doctorsAPI.getMyProfile(),
-      ]);
+      const data = await appointmentsAPI.getDoctorAppointments();
+      const appointmentsArray = extractArray(data) as Appointment[];
+      setAppointments(appointmentsArray);
 
-      if (appointmentsResult.status === 'fulfilled') {
-        const appointmentsArray = extractArray(appointmentsResult.value) as Appointment[];
-        setAppointments(appointmentsArray);
+      const patientMap = new Map<string, { name: string; last_appointment: string }>();
+      const marks: MarkedDates = {};
+      const today = new Date().toISOString().split('T')[0];
 
-        const patientMap = new Map<string, { name: string; last_appointment: string }>();
-        const marks: MarkedDates = {};
-        const today = new Date().toISOString().split('T')[0];
+      appointmentsArray.forEach((apt) => {
+        if (!patientMap.has(apt.patient_name)) {
+          patientMap.set(apt.patient_name, {
+            name: apt.patient_name,
+            last_appointment: apt.appointment_date,
+          });
+        }
+        marks[apt.appointment_date] = {
+          marked: true,
+          dotColor: apt.status === 'CANCELLED' ? '#ef4444' : '#16a34a',
+        };
+      });
 
-        appointmentsArray.forEach((apt) => {
-          // Build Patient List
-          if (!patientMap.has(apt.patient_name)) {
-            patientMap.set(apt.patient_name, { name: apt.patient_name, last_appointment: apt.appointment_date });
-          }
-          // Build Calendar Marks
-          marks[apt.appointment_date] = {
-            marked: true,
-            dotColor: apt.status === 'CANCELLED' ? '#ef4444' : '#16a34a',
-          };
-        });
-
-        setPatients(Array.from(patientMap.entries()).map(([id, val]) => ({ id, ...val })));
-        setMarkedDates(marks);
-
-        setStats({
-          totalPatients: patientMap.size,
-          todayAppointments: appointmentsArray.filter(a => a.appointment_date === today && a.status !== 'CANCELLED').length,
-          pendingAppointments: appointmentsArray.filter(a => a.status === 'PENDING').length,
-          completedAppointments: appointmentsArray.filter(a => a.status === 'COMPLETED').length,
-        });
-      }
+      setPatients(
+        Array.from(patientMap.entries()).map(([id, val]) => ({ id, ...val }))
+      );
+      setMarkedDates(marks);
+      setStats({
+        totalPatients: patientMap.size,
+        todayAppointments: appointmentsArray.filter(
+          (a) => a.appointment_date === today && a.status !== 'CANCELLED'
+        ).length,
+        pendingAppointments: appointmentsArray.filter(
+          (a) => a.status === 'PENDING'
+        ).length,
+        completedAppointments: appointmentsArray.filter(
+          (a) => a.status === 'COMPLETED'
+        ).length,
+      });
     } catch (error) {
       console.error('Dashboard Load Error:', error);
+      Alert.alert('Error', 'Failed to load dashboard. Pull to refresh.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
-  // 3. Focus Hook (FIXED: Placed before conditional returns)
   useFocusEffect(
     useCallback(() => {
       const checkAndLoad = async () => {
+        setIsCheckingProfile(true);
+        setLoading(true);
         try {
+          // Load user from AsyncStorage for header name
           const userStr = await AsyncStorage.getItem('user');
           if (userStr) setDoctor(JSON.parse(userStr));
+
+          // Check doctor profile — if 404 redirect to DoctorDetails
+          try {
+            await doctorsAPI.getMyProfile();
+            console.log('Doctor profile found, loading dashboard...');
+          } catch (profileError: any) {
+            console.log('Profile check status:', profileError?.response?.status);
+            if (profileError?.response?.status === 404) {
+              console.log('No profile found, navigating to DoctorDetails');
+              setIsCheckingProfile(false);
+              setLoading(false);
+              navigation.replace('DoctorDetails');
+              return;
+            }
+            // Non-404 error (network issue etc.) — log and continue
+            console.warn('Profile check non-404 error:', profileError?.message);
+          }
+
+          // Profile exists → load dashboard data
           await fetchDashboardData();
         } catch (error) {
-          navigation.replace('DoctorDetails');
+          console.error('Dashboard init error:', error);
         } finally {
           setIsCheckingProfile(false);
         }
       };
+
       checkAndLoad();
     }, [fetchDashboardData])
   );
@@ -155,15 +173,18 @@ export default function DoctorDashboard() {
   const handleLogout = () => {
     Alert.alert('Logout', 'Confirm logout?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Logout', style: 'destructive', onPress: async () => {
-        setLoggingOut(true);
-        await signOut();
-        setLoggingOut(false);
-      }},
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          setLoggingOut(true);
+          await signOut();
+          setLoggingOut(false);
+        },
+      },
     ]);
   };
 
-  // 4. Conditional Loading Return
   if (isCheckingProfile || (loading && !refreshing)) {
     return (
       <View style={styles.loadingContainer}>
@@ -173,7 +194,6 @@ export default function DoctorDashboard() {
     );
   }
 
-  // --- Helper Components ---
   const StatBox = ({ label, value, icon, color }: any) => (
     <View style={styles.statBox}>
       <View style={[styles.statIconCircle, { backgroundColor: color + '15' }]}>
@@ -188,18 +208,18 @@ export default function DoctorDashboard() {
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
-      case 'pending': return { bg: '#fff7ed', text: '#c2410c' };
+      case 'pending':   return { bg: '#fff7ed', text: '#c2410c' };
       case 'confirmed': return { bg: '#f0fdf4', text: '#15803d' };
       case 'completed': return { bg: '#f8fafc', text: '#475569' };
       case 'cancelled': return { bg: '#fef2f2', text: '#b91c1c' };
-      default: return { bg: '#f3f4f6', text: '#374151' };
+      default:          return { bg: '#f3f4f6', text: '#374151' };
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <View>
@@ -207,28 +227,43 @@ export default function DoctorDashboard() {
           <Text style={styles.doctorName}>Dr. {doctor?.first_name || 'Provider'}</Text>
         </View>
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-          {loggingOut ? <ActivityIndicator size="small" color="#ef4444" /> : <Icon name="log-out-outline" size={22} color="#ef4444" />}
+          {loggingOut
+            ? <ActivityIndicator size="small" color="#ef4444" />
+            : <Icon name="log-out-outline" size={22} color="#ef4444" />
+          }
         </TouchableOpacity>
       </View>
 
-      <ScrollView 
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => fetchDashboardData()} tintColor="#16a34a" />}
+      <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={fetchDashboardData}
+            tintColor="#16a34a"
+          />
+        }
         showsVerticalScrollIndicator={false}
       >
         {/* Stats Strip */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statsScroll}>
-          <StatBox label="Today" value={stats.todayAppointments} icon="calendar" color="#16a34a" />
-          <StatBox label="Pending" value={stats.pendingAppointments} icon="time" color="#f59e0b" />
-          <StatBox label="Patients" value={stats.totalPatients} icon="people" color="#6366f1" />
-          <StatBox label="Done" value={stats.completedAppointments} icon="checkmark-done" color="#64748b" />
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.statsScroll}
+        >
+          <StatBox label="Today"    value={stats.todayAppointments}     icon="calendar"       color="#16a34a" />
+          <StatBox label="Pending"  value={stats.pendingAppointments}   icon="time"           color="#f59e0b" />
+          <StatBox label="Patients" value={stats.totalPatients}         icon="people"         color="#6366f1" />
+          <StatBox label="Done"     value={stats.completedAppointments} icon="checkmark-done" color="#64748b" />
         </ScrollView>
 
-        {/* Calendar Section */}
+        {/* Calendar */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Monthly Schedule</Text>
           <Calendar
             markedDates={markedDates}
-            onDayPress={(day: any) => navigation.navigate('AppointmentsCalendar', { date: day.dateString })}
+            onDayPress={(day: any) =>
+              navigation.navigate('AppointmentsCalendar', { date: day.dateString })
+            }
             theme={{
               todayTextColor: '#16a34a',
               dotColor: '#16a34a',
@@ -243,50 +278,84 @@ export default function DoctorDashboard() {
 
         {/* Tab Switcher */}
         <View style={styles.tabWrapper}>
-          <TouchableOpacity style={[styles.tab, activeTab === 'appointments' && styles.activeTab]} onPress={() => setActiveTab('appointments')}>
-            <Text style={[styles.tabText, activeTab === 'appointments' && styles.activeTabText]}>Appointments</Text>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'appointments' && styles.activeTab]}
+            onPress={() => setActiveTab('appointments')}
+          >
+            <Text style={[styles.tabText, activeTab === 'appointments' && styles.activeTabText]}>
+              Appointments
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.tab, activeTab === 'patients' && styles.activeTab]} onPress={() => setActiveTab('patients')}>
-            <Text style={[styles.tabText, activeTab === 'patients' && styles.activeTabText]}>My Patients</Text>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'patients' && styles.activeTab]}
+            onPress={() => setActiveTab('patients')}
+          >
+            <Text style={[styles.tabText, activeTab === 'patients' && styles.activeTabText]}>
+              My Patients
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Dynamic List Content */}
+        {/* List Content */}
         <View style={styles.listSection}>
           {activeTab === 'appointments' ? (
             appointments.length === 0 ? (
-              <View style={styles.emptyState}><Text style={styles.emptyText}>No appointments scheduled</Text></View>
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>No appointments scheduled</Text>
+              </View>
             ) : (
               appointments.map((item) => {
                 const colors = getStatusColor(item.status);
                 return (
-                  <TouchableOpacity 
-                    key={item.id} 
+                  <TouchableOpacity
+                    key={item.id}
                     style={styles.aptCard}
-                    onPress={() => navigation.navigate('AppointmentDetails', { appointmentId: item.id })}
+                    onPress={() =>
+                      navigation.navigate('AppointmentDetails', { appointmentId: item.id })
+                    }
                   >
                     <View style={styles.aptTimeBox}>
-                      <Text style={styles.aptTime}>{item.appointment_time.substring(0,5)}</Text>
-                      {isToday(parseISO(item.appointment_date)) && <View style={styles.liveDot} />}
+                      <Text style={styles.aptTime}>
+                        {item.appointment_time.substring(0, 5)}
+                      </Text>
+                      {isToday(parseISO(item.appointment_date)) && (
+                        <View style={styles.liveDot} />
+                      )}
                     </View>
                     <View style={styles.aptInfo}>
                       <Text style={styles.aptPatient}>{item.patient_name}</Text>
-                      <Text style={styles.aptReason} numberOfLines={1}>{item.reason}</Text>
+                      <Text style={styles.aptReason} numberOfLines={1}>
+                        {item.reason}
+                      </Text>
                     </View>
                     <View style={[styles.statusTag, { backgroundColor: colors.bg }]}>
-                      <Text style={[styles.statusTagText, { color: colors.text }]}>{item.status_display}</Text>
+                      <Text style={[styles.statusTagText, { color: colors.text }]}>
+                        {item.status_display}
+                      </Text>
                     </View>
                   </TouchableOpacity>
                 );
               })
             )
+          ) : patients.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>No patients yet</Text>
+            </View>
           ) : (
             patients.map((item) => (
-              <TouchableOpacity key={item.id} style={styles.aptCard} onPress={() => navigation.navigate('PatientDetails', { patientId: item.id })}>
+              <TouchableOpacity
+                key={item.id}
+                style={styles.aptCard}
+                onPress={() =>
+                  navigation.navigate('PatientDetails', { patientId: parseInt(item.id, 10) })
+                }
+              >
                 <Icon name="person-circle" size={40} color="#cbd5e1" />
                 <View style={[styles.aptInfo, { marginLeft: 12 }]}>
                   <Text style={styles.aptPatient}>{item.name}</Text>
-                  <Text style={styles.aptReason}>Last: {format(parseISO(item.last_appointment), 'MMM dd, yyyy')}</Text>
+                  <Text style={styles.aptReason}>
+                    Last: {format(parseISO(item.last_appointment), 'MMM dd, yyyy')}
+                  </Text>
                 </View>
                 <Icon name="chevron-forward" size={18} color="#cbd5e1" />
               </TouchableOpacity>
@@ -295,17 +364,26 @@ export default function DoctorDashboard() {
         </View>
       </ScrollView>
 
-      {/* Floating Action Toolbar */}
+      {/* Floating Toolbar */}
       <View style={styles.toolbar}>
-        <TouchableOpacity style={styles.toolbarBtn} onPress={() => navigation.navigate('SetAvailability')}>
+        <TouchableOpacity
+          style={styles.toolbarBtn}
+          onPress={() => navigation.navigate('SetAvailability')}
+        >
           <Icon name="time-outline" size={22} color="#16a34a" />
           <Text style={styles.toolbarLabel}>Hours</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.toolbarBtn} onPress={() => navigation.navigate('SharedDocuments')}>
+        <TouchableOpacity
+          style={styles.toolbarBtn}
+          onPress={() => navigation.navigate('SharedDocuments')}
+        >
           <Icon name="document-text-outline" size={22} color="#16a34a" />
           <Text style={styles.toolbarLabel}>Docs</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.toolbarBtn} onPress={() => navigation.navigate('DoctorPrescriptions')}>
+        <TouchableOpacity
+          style={styles.toolbarBtn}
+          onPress={() => navigation.navigate('DoctorPrescriptions')}
+        >
           <Icon name="medical-outline" size={22} color="#16a34a" />
           <Text style={styles.toolbarLabel}>Prescription</Text>
         </TouchableOpacity>
