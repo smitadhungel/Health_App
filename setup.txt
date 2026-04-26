@@ -52,3 +52,21 @@ adb devices it will show the list of decives
 adb reverse tcp:8081 tcp:8081 run this cmd if ur app dont get connected to the metro 
 npx react-native run-android
 npx react-native start
+
+
+These are the cmd to make the super user 
+
+first 
+
+python manage.py createsuperuser 
+follow the cmd and then after that use these cmd in the terminals 
+
+
+ python manage.py shel 
+ from users.models import User
+ user = User.objects.get(email='your_superuser_email@example.com')
+ user.role = 'ADMIN'
+ user.save()
+ print(user.role)
+
+ 
