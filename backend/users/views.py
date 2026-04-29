@@ -4,8 +4,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-from .serializers import UserRegistrationSerializer,UserSerializer
-
+from .serializers import UserRegistrationSerializer,UserSerializer,UserProfileUpdateSerializer
+from rest_framework import generics, permissions
+from .models import User
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -100,3 +101,15 @@ def logout_user(request):
             {'error': str(e)},
             status=status.HTTP_400_BAD_REQUEST
         )
+    
+class AdminPatientListView(generics.ListAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+    def get_queryset(self):
+        return User.objects.filter(role='PATIENT').order_by('-created_at')
+
+class AdminPatientDetailView(generics.RetrieveAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAdminUser]
+    queryset = User.objects.filter(role='PATIENT')

@@ -2,6 +2,7 @@ from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAdminUser
 from django.db.models import Q, Avg
 from .models import DoctorProfile, DoctorAvailability, DoctorReview
 from .serializers import (
@@ -11,6 +12,7 @@ from .serializers import (
     DoctorAvailabilitySerializer,
     DoctorReviewSerializer
 )
+from django.utils import timezone
 from .permissions import IsDoctor, IsPatient, IsDoctorOwner
 from rest_framework.parsers import MultiPartParser, FormParser
 # ============================================
@@ -100,6 +102,61 @@ class UpdateDoctorProfileView(generics.UpdateAPIView):
         })
 
 
+# class DoctorListView(generics.ListAPIView):
+#     """List all doctors with optional filters"""
+#     serializer_class = DoctorListSerializer
+#     permission_classes = [AllowAny]
+    
+#     def get_queryset(self):
+#         queryset = DoctorProfile.objects.select_related('user').all()
+        
+#         # Filter by specialization
+#         specialization = self.request.query_params.get('specialization')
+#         if specialization:
+#             queryset = queryset.filter(specialization=specialization)
+        
+#         # Filter by availability
+#         available_only = self.request.query_params.get('available', 'false')
+#         if available_only.lower() == 'true':
+#             queryset = queryset.filter(is_available=True)
+        
+#         # Filter by verified status
+#         verified_only = self.request.query_params.get('verified', 'false')
+#         # if verified_only.lower() == 'true':
+#         #     queryset = queryset.filter(is_verified=True)
+#         queryset = queryset.filter(verification_status='APPROVED')
+        
+#         # Search by name
+#         search = self.request.query_params.get('search')
+#         if search:
+#             queryset = queryset.filter(
+#                 Q(user__first_name__icontains=search) |
+#                 Q(user__last_name__icontains=search)
+#             )
+        
+#         # Sort by rating or experience
+#         sort_by = self.request.query_params.get('sort_by', 'rating')
+#         if sort_by == 'experience':
+#             queryset = queryset.order_by('-experience_years')
+#         elif sort_by == 'fee_low':
+#             queryset = queryset.order_by('consultation_fee')
+#         elif sort_by == 'fee_high':
+#             queryset = queryset.order_by('-consultation_fee')
+#         else:
+#             queryset = queryset.order_by('-rating', '-experience_years')
+        
+#         return queryset
+    
+#     def list(self, request, *args, **kwargs):
+#         queryset = self.get_queryset()
+#         serializer = self.get_serializer(queryset, many=True)
+#         return Response({
+#             'count': queryset.count(),
+#             'doctors': serializer.data
+#         })
+
+# Replace your DoctorListView.get_queryset() with this:
+
 class DoctorListView(generics.ListAPIView):
     """List all doctors with optional filters"""
     serializer_class = DoctorListSerializer
@@ -107,6 +164,14 @@ class DoctorListView(generics.ListAPIView):
     
     def get_queryset(self):
         queryset = DoctorProfile.objects.select_related('user').all()
+        
+        # ── Role-based filtering ──
+        user = self.request.user
+        is_admin = user.is_authenticated and hasattr(user, 'role') and user.role == 'ADMIN'
+        
+        if not is_admin:
+            # Patients and everyone else only see APPROVED doctors
+            queryset = queryset.filter(verification_status='APPROVED')
         
         # Filter by specialization
         specialization = self.request.query_params.get('specialization')
@@ -117,13 +182,12 @@ class DoctorListView(generics.ListAPIView):
         available_only = self.request.query_params.get('available', 'false')
         if available_only.lower() == 'true':
             queryset = queryset.filter(is_available=True)
-        
-        # Filter by verified status
-        verified_only = self.request.query_params.get('verified', 'false')
-        # if verified_only.lower() == 'true':
-        #     queryset = queryset.filter(is_verified=True)
-        queryset = queryset.filter(verification_status='APPROVED')
-        
+
+        # Filter by verification_status (admin use)
+        verification_status = self.request.query_params.get('verification_status')
+        if verification_status and is_admin:
+            queryset = queryset.filter(verification_status=verification_status.upper())
+
         # Search by name
         search = self.request.query_params.get('search')
         if search:
@@ -132,7 +196,7 @@ class DoctorListView(generics.ListAPIView):
                 Q(user__last_name__icontains=search)
             )
         
-        # Sort by rating or experience
+        # Sort
         sort_by = self.request.query_params.get('sort_by', 'rating')
         if sort_by == 'experience':
             queryset = queryset.order_by('-experience_years')
@@ -152,7 +216,6 @@ class DoctorListView(generics.ListAPIView):
             'count': queryset.count(),
             'doctors': serializer.data
         })
-
 
 class DoctorDetailView(generics.RetrieveAPIView):
     """Get detailed information about a specific doctor"""
@@ -290,12 +353,9 @@ class AddReviewView(generics.CreateAPIView):
         }, status=status.HTTP_201_CREATED)
 
 
-# Add to doctors/views.py
-from rest_framework.permissions import IsAdminUser
-from django.utils import timezone
 
 class VerifyDoctorView(APIView):
-    """Admin verifies or rejects a doctor"""
+    """Admin approves, rejects, or revokes a doctor"""
     permission_classes = [IsAdminUser]
 
     def post(self, request, doctor_id):
@@ -304,7 +364,7 @@ class VerifyDoctorView(APIView):
         except DoctorProfile.DoesNotExist:
             return Response({'error': 'Doctor not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        action = request.data.get('action')  # 'APPROVE' or 'REJECT'
+        action = request.data.get('action')  # 'APPROVE', 'REJECT', or 'REVOKE'
         reason = request.data.get('reason', '')
 
         if action == 'APPROVE':
@@ -318,13 +378,26 @@ class VerifyDoctorView(APIView):
         elif action == 'REJECT':
             doctor.verification_status = 'REJECTED'
             doctor.rejection_reason = reason
+            doctor.verified_at = None
+            doctor.verified_by = None
             doctor.save()
             return Response({'message': 'Doctor rejected'})
 
-        return Response({'error': 'Invalid action. Use APPROVE or REJECT'}, status=status.HTTP_400_BAD_REQUEST)
-    
-# Add this to doctors/views.py
-from rest_framework.permissions import IsAdminUser
+        elif action == 'REVOKE':
+            # Revoke approval — doctor goes back to PENDING
+            # Also mark them unavailable so patients can't book
+            doctor.verification_status = 'REJECTED'
+            doctor.rejection_reason = reason if reason else 'Approval revoked by admin'
+            doctor.is_available = False
+            doctor.verified_at = None
+            doctor.verified_by = None
+            doctor.save()
+            return Response({'message': 'Doctor approval revoked successfully'})
+
+        return Response(
+            {'error': 'Invalid action. Use APPROVE, REJECT, or REVOKE'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 class AdminPendingDoctorsView(generics.ListAPIView):
     """Admin gets all pending doctors"""

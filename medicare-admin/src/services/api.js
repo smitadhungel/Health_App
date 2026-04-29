@@ -1,7 +1,9 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://192.168.100.9:8000/';
 
+// const BASE_URL = 'http://192.168.100.9:8000/';
+
+const BASE_URL ='http://127.0.0.1:8000/';
 const api = axios.create({ baseURL: BASE_URL });
 
 api.interceptors.request.use((config) => {
@@ -38,11 +40,16 @@ export const authAPI = {
 };
 
 export const adminAPI = {
-  getPendingDoctors: () => api.get('/api/doctors/?verified=false'),
   getAllDoctors: () => api.get('/api/doctors/'),
-  approveDoctor: (id) => api.put(`/api/doctors/${id}/approve/`),
-  rejectDoctor: (id, reason) => api.put(`/api/doctors/${id}/reject/`, { reason }),
+  getPendingDoctors: () => api.get('/api/doctors/?verification_status=PENDING'),
+  getVerifiedDoctors: () => api.get('/api/doctors/?verification_status=APPROVED'),
+  approveDoctor: (id) => api.post(`/api/doctors/${id}/verify/`, { action: 'APPROVE' }),
+  rejectDoctor: (id, reason) => api.post(`/api/doctors/${id}/verify/`, { action: 'REJECT', reason }),
+  revokeDoctor: (id, reason) => api.post(`/api/doctors/${id}/verify/`, { action: 'REVOKE', reason }),
   getDoctorDetails: (id) => api.get(`/api/doctors/${id}/`),
+  getDoctorAvailability: (id) => api.get(`/api/doctors/${id}/availability/`),
+  getAllPatients:     () => api.get('/api/users/users/'),
+  getPatientDetails: (id) => api.get(`/api/users/users/${id}/`),
 };
 
 export const appointmentAPI = {

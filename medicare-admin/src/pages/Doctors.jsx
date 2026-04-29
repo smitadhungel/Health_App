@@ -12,10 +12,12 @@ export default function Doctors() {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('all'); // all | pending | verified
+  const [filter, setFilter] = useState('all');
   const [rejectModal, setRejectModal] = useState(false);
+  const [revokeModal, setRevokeModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [revokeReason, setRevokeReason] = useState('');
   const [actionLoading, setActionLoading] = useState(null);
   const [toast, setToast] = useState(null);
 
@@ -43,7 +45,11 @@ export default function Doctors() {
     setActionLoading(doc.id);
     try {
       await adminAPI.approveDoctor(doc.id);
-      setDoctors(prev => prev.map(d => d.id === doc.id ? { ...d, is_verified: true } : d));
+      setDoctors(prev => prev.map(d =>
+        d.id === doc.id
+          ? { ...d, is_verified: true, verification_status: 'APPROVED' }
+          : d
+      ));
       showToast(`Dr. ${doc.doctor_name} approved!`);
     } catch {
       showToast('Failed to approve doctor', 'error');
@@ -63,11 +69,40 @@ export default function Doctors() {
     setActionLoading(selectedDoc.id);
     try {
       await adminAPI.rejectDoctor(selectedDoc.id, rejectReason);
-      setDoctors(prev => prev.filter(d => d.id !== selectedDoc.id));
+      setDoctors(prev => prev.map(d =>
+        d.id === selectedDoc.id
+          ? { ...d, verification_status: 'REJECTED', is_verified: false }
+          : d
+      ));
       setRejectModal(false);
       showToast(`Dr. ${selectedDoc.doctor_name} rejected.`);
     } catch {
       showToast('Failed to reject doctor', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const openRevoke = (doc) => {
+    setSelectedDoc(doc);
+    setRevokeReason('');
+    setRevokeModal(true);
+  };
+
+  const handleRevoke = async () => {
+    if (!revokeReason.trim()) return;
+    setActionLoading(selectedDoc.id);
+    try {
+      await adminAPI.revokeDoctor(selectedDoc.id, revokeReason);
+      setDoctors(prev => prev.map(d =>
+        d.id === selectedDoc.id
+          ? { ...d, verification_status: 'REJECTED', is_verified: false, is_available: false }
+          : d
+      ));
+      setRevokeModal(false);
+      showToast(`Dr. ${selectedDoc.doctor_name}'s approval revoked.`);
+    } catch {
+      showToast('Failed to revoke doctor approval', 'error');
     } finally {
       setActionLoading(null);
     }
@@ -78,10 +113,12 @@ export default function Doctors() {
       d.doctor_name?.toLowerCase().includes(search.toLowerCase()) ||
       d.email?.toLowerCase().includes(search.toLowerCase()) ||
       d.specialization_display?.toLowerCase().includes(search.toLowerCase());
+    const status = d.verification_status || (d.is_verified ? 'APPROVED' : 'PENDING');
     const matchFilter =
       filter === 'all' ||
-      (filter === 'pending' && !d.is_verified) ||
-      (filter === 'verified' && d.is_verified);
+      (filter === 'pending' && status === 'PENDING') ||
+      (filter === 'verified' && status === 'APPROVED') ||
+      (filter === 'rejected' && status === 'REJECTED');
     return matchSearch && matchFilter;
   });
 
@@ -107,7 +144,7 @@ export default function Doctors() {
           />
         </div>
         <div className="flex gap-2">
-          {['all', 'pending', 'verified'].map(f => (
+          {['all', 'pending', 'verified', 'rejected'].map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
@@ -121,11 +158,12 @@ export default function Doctors() {
       </div>
 
       {/* Summary chips */}
-      <div className="flex gap-3">
+      <div className="flex gap-3 flex-wrap">
         {[
           { label: 'Total', count: doctors.length, color: 'bg-slate-100 text-slate-700' },
-          { label: 'Pending', count: doctors.filter(d => !d.is_verified).length, color: 'bg-amber-50 text-amber-700' },
-          { label: 'Verified', count: doctors.filter(d => d.is_verified).length, color: 'bg-green-50 text-green-700' },
+          { label: 'Pending', count: doctors.filter(d => (d.verification_status || 'PENDING') === 'PENDING').length, color: 'bg-amber-50 text-amber-700' },
+          { label: 'Verified', count: doctors.filter(d => d.verification_status === 'APPROVED').length, color: 'bg-green-50 text-green-700' },
+          { label: 'Rejected', count: doctors.filter(d => d.verification_status === 'REJECTED').length, color: 'bg-red-50 text-red-700' },
         ].map(c => (
           <div key={c.label} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${c.color}`}>
             {c.label}: <span className="font-bold">{c.count}</span>
@@ -177,12 +215,27 @@ export default function Doctors() {
                     <td className="px-5 py-4 text-slate-600">{doc.experience_years ? `${doc.experience_years} yrs` : '—'}</td>
                     <td className="px-5 py-4">
                       <Badge
-                        label={doc.is_verified ? 'Verified' : 'Pending'}
-                        variant={doc.is_verified ? 'success' : 'warning'}
+                        label={
+                          doc.verification_status === 'APPROVED' ? 'Verified' :
+                          doc.verification_status === 'REJECTED' ? 'Rejected' : 'Pending'
+                        }
+                        variant={
+                          doc.verification_status === 'APPROVED' ? 'success' :
+                          doc.verification_status === 'REJECTED' ? 'danger' : 'warning'
+                        }
                       />
                     </td>
                     <td className="px-5 py-4" onClick={e => e.stopPropagation()}>
-                      {!doc.is_verified ? (
+                      {doc.verification_status === 'APPROVED' ? (
+                        <button
+                          onClick={() => openRevoke(doc)}
+                          disabled={actionLoading === doc.id}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 hover:bg-orange-100 disabled:opacity-50 text-orange-600 text-xs font-medium rounded-lg border border-orange-200 transition"
+                        >
+                          <XCircle size={13} />
+                          Revoke
+                        </button>
+                      ) : (
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleApprove(doc)}
@@ -201,8 +254,6 @@ export default function Doctors() {
                             Reject
                           </button>
                         </div>
-                      ) : (
-                        <span className="text-xs text-slate-400">No action needed</span>
                       )}
                     </td>
                   </tr>
@@ -239,6 +290,48 @@ export default function Doctors() {
                 className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white text-sm font-medium transition"
               >
                 Confirm Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Revoke Modal */}
+      {revokeModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
+                <XCircle size={20} className="text-orange-500" />
+              </div>
+              <div>
+                <h3 className="font-display font-bold text-slate-900 text-lg leading-none">Revoke Approval</h3>
+                <p className="text-slate-500 text-sm mt-0.5">Dr. {selectedDoc?.doctor_name}</p>
+              </div>
+            </div>
+            <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 mb-4 text-sm text-orange-700">
+              ⚠️ This will immediately remove this doctor from the patient booking list and mark them as unavailable.
+            </div>
+            <textarea
+              value={revokeReason}
+              onChange={e => setRevokeReason(e.target.value)}
+              placeholder="Enter reason for revoking approval (e.g. malpractice complaint, license suspended)..."
+              rows={3}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none mb-4"
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => setRevokeModal(false)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRevoke}
+                disabled={!revokeReason.trim() || actionLoading}
+                className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white text-sm font-medium transition"
+              >
+                {actionLoading ? 'Revoking...' : 'Confirm Revoke'}
               </button>
             </div>
           </div>

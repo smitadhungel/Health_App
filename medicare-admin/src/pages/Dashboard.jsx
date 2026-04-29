@@ -82,7 +82,7 @@ export default function Dashboard() {
         <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-teal-300 opacity-5 rounded-full translate-y-1/2" />
         <div className="relative z-10 flex items-center justify-between">
           <div>
-            <p className="text-brand-400 text-sm font-medium mb-1">Welcome back 👋</p>
+            <p className="text-brand-400 text-sm font-medium mb-1">Welcome back </p>
             <h1 className="font-display text-2xl font-bold text-white mb-1">MediCare Admin</h1>
             <p className="text-brand-300 text-sm">Here's what's happening on your platform today.</p>
           </div>

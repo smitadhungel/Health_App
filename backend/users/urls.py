@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views import AdminPatientListView, AdminPatientDetailView
 
 app_name = 'users'
 
@@ -9,4 +10,6 @@ urlpatterns = [
     path('logout/', views.logout_user, name='logout'),
     path('profile/', views.get_user_profile, name='profile'),
     path('profile/update/', views.update_user_profile, name='profile-update'),
+    path('users/',AdminPatientListView.as_view(), name='admin-patient-list'),
+    path('users/<int:pk>/',AdminPatientDetailView.as_view(), name='admin-patient-detail'),
 ]
