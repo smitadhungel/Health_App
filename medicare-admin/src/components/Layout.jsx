@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { Menu, Bell } from 'lucide-react';
+import { Menu} from 'lucide-react';
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -40,10 +40,10 @@ export default function Layout() {
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="relative p-2 rounded-xl hover:bg-slate-100 transition text-slate-500">
+            {/* <button className="relative p-2 rounded-xl hover:bg-slate-100 transition text-slate-500">
               <Bell size={20} />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-brand-500 rounded-full" />
-            </button>
+            </button> */}
             <div className="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center text-white text-sm font-bold">
               A
             </div>

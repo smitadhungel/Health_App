@@ -7,6 +7,7 @@ from django.contrib.auth import authenticate
 from .serializers import UserRegistrationSerializer,UserSerializer,UserProfileUpdateSerializer
 from rest_framework import generics, permissions
 from .models import User
+from doctor.models import DoctorProfile 
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -113,3 +114,12 @@ class AdminPatientDetailView(generics.RetrieveAPIView):
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAdminUser]
     queryset = User.objects.filter(role='PATIENT')
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def platform_stats(request):
+    return Response({
+        'verified_doctors': DoctorProfile.objects.filter(verification_status='APPROVED').count(),
+        'active_patients':  User.objects.filter(role='PATIENT', is_active=True).count(),
+        'today_appointments': 0,
+    })

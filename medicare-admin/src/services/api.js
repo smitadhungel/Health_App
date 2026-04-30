@@ -1,9 +1,9 @@
 import axios from 'axios';
 
 
-// const BASE_URL = 'http://192.168.100.9:8000/';
+ const BASE_URL = 'http://192.168.100.9:8000/';
 
-const BASE_URL ='http://127.0.0.1:8000/';
+// const BASE_URL ='http://127.0.0.1:8000/';
 const api = axios.create({ baseURL: BASE_URL });
 
 api.interceptors.request.use((config) => {
@@ -73,6 +73,10 @@ export const documentAPI = {
 export const userAPI = {
   getProfile: () => api.get('/api/users/profile/'),
   updateProfile: (data) => api.put('/api/users/profile/update/', data),
+};
+
+export const publicAPI = {
+  getStats: () => api.get('/api/users/stats/'),
 };
 
 export default api;

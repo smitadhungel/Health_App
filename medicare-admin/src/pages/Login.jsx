@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ShieldCheck, AlertCircle } from 'lucide-react';
+import { publicAPI } from '../services/api';
 
 export default function Login() {
   const { login, loading } = useAuth();
@@ -9,6 +10,17 @@ export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
+  const [stats, setStats] = useState({
+    verified_doctors: null,
+    active_patients: null,
+    today_appointments: null,
+  });
+
+  useEffect(() => {
+    publicAPI.getStats()
+      .then(res => setStats(res.data))
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,14 +30,24 @@ export default function Login() {
     else setError(res.error);
   };
 
+  const statItems = [
+    { label: 'Doctors',      sub: 'Verified',  value: stats.verified_doctors },
+    { label: 'Patients',     sub: 'Active',    value: stats.active_patients },
+    // { label: 'Appointments', sub: 'Today',     value: stats.today_appointments },
+  ];
+
   return (
     <div className="min-h-screen flex">
-      {/* Left panel */}
+
+      {/* ── Left panel ── */}
       <div className="hidden lg:flex lg:w-1/2 bg-brand-950 flex-col justify-between p-12 relative overflow-hidden">
+        {/* Background blobs */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-20 w-64 h-64 rounded-full bg-brand-400 blur-3xl" />
           <div className="absolute bottom-32 right-10 w-80 h-80 rounded-full bg-teal-300 blur-3xl" />
         </div>
+
+        {/* Logo */}
         <div className="relative z-10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-brand-500 flex items-center justify-center">
@@ -34,6 +56,8 @@ export default function Login() {
             <span className="font-display text-white text-xl font-bold">MediCare</span>
           </div>
         </div>
+
+        {/* Headline */}
         <div className="relative z-10">
           <h1 className="font-display text-5xl font-bold text-white leading-tight mb-4">
             Admin<br />Control<br />Center
@@ -42,20 +66,30 @@ export default function Login() {
             Manage doctors, patients, appointments and the entire healthcare platform from one place.
           </p>
         </div>
+
+        {/* Live stats */}
         <div className="relative z-10 flex gap-8">
-          {[['Doctors', 'Verified'], ['Patients', 'Active'], ['Appointments', 'Today']].map(([label, sub]) => (
+          {statItems.map(({ label, sub, value }) => (
             <div key={label}>
               <div className="text-brand-300 text-xs uppercase tracking-widest mb-1">{sub}</div>
-              <div className="text-white font-display text-2xl font-bold">—</div>
+              {value === null ? (
+                <div className="w-10 h-7 bg-brand-800 rounded-lg animate-pulse mb-1" />
+              ) : (
+                <div className="text-white font-display text-2xl font-bold">
+                  {Number(value).toLocaleString()}
+                </div>
+              )}
               <div className="text-brand-400 text-sm mt-1">{label}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Right panel */}
+      {/* ── Right panel ── */}
       <div className="flex-1 flex items-center justify-center p-8 bg-slate-50">
         <div className="w-full max-w-md">
+
+          {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-10">
             <div className="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center">
               <ShieldCheck size={20} className="text-white" />
@@ -66,6 +100,7 @@ export default function Login() {
           <h2 className="font-display text-3xl font-bold text-slate-900 mb-1">Welcome back</h2>
           <p className="text-slate-500 mb-8">Sign in to your admin account</p>
 
+          {/* Error */}
           {error && (
             <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-6 text-sm">
               <AlertCircle size={16} className="shrink-0" />
@@ -73,9 +108,12 @@ export default function Login() {
             </div>
           )}
 
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Email address</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Email address
+              </label>
               <input
                 type="email"
                 required
@@ -85,8 +123,11 @@ export default function Login() {
                 placeholder="admin@medicare.com"
               />
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Password</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Password
+              </label>
               <div className="relative">
                 <input
                   type={showPass ? 'text' : 'password'}
@@ -105,6 +146,7 @@ export default function Login() {
                 </button>
               </div>
             </div>
+
             <button
               type="submit"
               disabled={loading}
