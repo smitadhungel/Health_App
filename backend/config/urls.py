@@ -69,6 +69,7 @@ urlpatterns = [
     path('api/medications/', include('medications.urls')),
     # for the pharmacy 
     path('api/places/',include('place.urls')),
+     path('api/chat/',include('chat.urls')),
     
     # ============================================
     # API DOCUMENTATION

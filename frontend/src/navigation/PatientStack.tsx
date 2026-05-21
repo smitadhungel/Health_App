@@ -7,11 +7,13 @@ import { PatientStackParamList } from './types';
 import PatientHomeScreen from '../screens/patient/PatientHomeScreen';
 
 // medication tracking screen 
-import MedicationsListScreen from '../screens/patient/medication /MedicationsListScreen';
-import AddMedicationScreen from '../screens/patient/medication /AddMedicationScreen';
-import MedicationDetailScreen from '../screens/patient/medication /MedicationsDetailScreen';
-import TodayDosesScreen from '../screens/patient/medication /TodayDosesScreen';
-import RefillRequestScreen from '../screens/patient/medication /RefillRequestScreen';
+import MedicationsListScreen from '../screens/patient/medication/MedicationsListScreen';
+// import MedicationsListScreen from '../screens/patient/medication/MedicationsListScreen';
+import AddMedicationScreen from '../screens/patient/medication/AddMedicationScreen';
+import MedicationDetailScreen from '../screens/patient/medication/MedicationsDetailScreen';
+import TodayDosesScreen from '../screens/patient/medication/TodayDosesScreen';
+import RefillRequestScreen from '../screens/patient/medication/RefillRequestScreen';
+import MedicationChatScreen from '../screens/patient/medication/Medicationchatscreen';
 
 // patient appointment booking screen and seeing the appointment 
 
@@ -128,6 +130,10 @@ export default function PatientStack() {
        <Stack.Screen 
        name="MyAppointments" 
        component={MyAppointmentsScreen} 
+       options={{ headerShown:false }} />
+        <Stack.Screen 
+       name="Chat" 
+       component={MedicationChatScreen} 
        options={{ headerShown:false }} />
      
     </Stack.Navigator>

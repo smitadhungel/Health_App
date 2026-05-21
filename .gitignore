@@ -51,4 +51,5 @@ auth_key.json
 # --- Logs ---
 *.log
 pip-log.txt
-pip-delete-this-directory.txt
+pip-delete-this-directory.txt.env
+.env

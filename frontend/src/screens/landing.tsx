@@ -1,27 +1,30 @@
 import React, { useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
-  Animated, StatusBar, Dimensions, Pressable
+  View,
+  Text,
+  StyleSheet,
+  Animated,
+  StatusBar,
+  Pressable,
+  Platform,
+  Easing,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { HeartPulse, ChevronRight } from 'lucide-react-native';
+import { HeartPulse, ChevronRight, Clock, MessageCircle } from 'lucide-react-native';
 
-const { width } = Dimensions.get('window');
 const FIRST_LAUNCH_KEY = 'medicare_has_launched';
 
 export default function LandingScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  
-  // Animation Values
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideUp = useRef(new Animated.Value(20)).current;
-  const btnScale = useRef(new Animated.Value(1)).current;
+  const slideUp = useRef(new Animated.Value(40)).current;
+  const floatAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Sequential "Staggered" Animation
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -30,26 +33,34 @@ export default function LandingScreen() {
       }),
       Animated.spring(slideUp, {
         toValue: 0,
-        friction: 6,
+        friction: 8,
         tension: 40,
         useNativeDriver: true,
-      })
+      }),
     ]).start();
+
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, {
+          toValue: -10,
+          duration: 2600,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatAnim, {
+          toValue: 0,
+          duration: 2600,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
   }, []);
 
-  const onPressIn = () => {
-    Animated.spring(btnScale, { toValue: 0.96, useNativeDriver: true }).start();
-  };
-
-  const onPressOut = () => {
-    Animated.spring(btnScale, { toValue: 1, useNativeDriver: true }).start();
-  };
-
   const handleGetStarted = async () => {
-    try { 
-      // Ensure the flag is set before navigating
-      await AsyncStorage.setItem(FIRST_LAUNCH_KEY, 'true'); 
-      navigation.replace('Login'); // Using replace so they can't swipe back to landing
+    try {
+      await AsyncStorage.setItem(FIRST_LAUNCH_KEY, 'true');
+      navigation.replace('Login');
     } catch (e) {
       navigation.navigate('Login');
     }
@@ -57,62 +68,55 @@ export default function LandingScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
-      
-      {/* Decorative Background Blur/Circles */}
-      <View style={styles.bgCircle} />
-      <View style={styles.bgCircleSecondary} />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      <Animated.View 
-        style={[
-          styles.content, 
-          { opacity: fadeAnim, transform: [{ translateY: slideUp }] }
-        ]}
+      <Animated.View
+        style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideUp }] }]}
       >
         <View style={styles.topSection}>
-          <View style={styles.iconOuterRing}>
-            <View style={styles.iconBox}>
-              <HeartPulse size={42} color="#fff" strokeWidth={2.5} />
+          {/* Icon */}
+          <Animated.View style={{ transform: [{ translateY: floatAnim }] }}>
+            <View style={styles.iconContainer}>
+              <HeartPulse size={55} color="#10B981" strokeWidth={2.3} />
             </View>
-          </View>
+          </Animated.View>
 
-          <View style={styles.textContainer}>
-            <Text style={styles.brand}>Medicare</Text>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>PREMIUM CARE</Text>
+          <Text style={styles.appName}>Medicare</Text>
+
+          <Text style={styles.headline}>
+            Healthcare, Reimagined
+          </Text>
+
+          <Text style={styles.subheadline}>
+            Book instant appointments, chat with AI assistant, and manage your complete health journey.
+          </Text>
+
+          {/* Features */}
+          <View style={styles.featuresContainer}>
+            <View style={styles.feature}>
+              <Clock size={20} color="#10B981" />
+              <Text style={styles.featureText}>Fast Appointments</Text>
             </View>
-            <Text style={styles.tagline}>
-              Your health journey,{"\n"}
-              <Text style={styles.highlightText}>perfectly coordinated.</Text>
-            </Text>
-            <Text style={styles.sub}>
-              Connect with specialists and manage your health records in one secure place.
-            </Text>
+            <View style={styles.feature}>
+              <MessageCircle size={20} color="#10B981" />
+              <Text style={styles.featureText}>AI Health Assistant</Text>
+            </View>
           </View>
         </View>
 
-        <View style={styles.footer}>
-          <Animated.View style={{ transform: [{ scale: btnScale }] }}>
-            <TouchableOpacity 
-              style={styles.primaryBtn} 
-              onPress={handleGetStarted}
-              onPressIn={onPressIn}
-              onPressOut={onPressOut}
-              activeOpacity={1}
-            >
-              <Text style={styles.primaryBtnText}>Get Started</Text>
-              <View style={styles.btnIconCircle}>
-                <ChevronRight size={18} color="#166534" strokeWidth={3} />
-              </View>
-            </TouchableOpacity>
-          </Animated.View>
+        {/* CTA */}
+        <View style={styles.bottomSection}>
+          <Pressable style={styles.ctaButton} onPress={handleGetStarted}>
+            <Text style={styles.ctaText}>Get Started Free</Text>
+            <ChevronRight size={24} color="#FFFFFF" strokeWidth={3} />
+          </Pressable>
 
-          <Pressable 
-            onPress={() => navigation.navigate('Login')} 
-            style={({ pressed }) => [styles.secondaryBtn, { opacity: pressed ? 0.5 : 1 }]}
+          <Pressable
+            onPress={() => navigation.navigate('Login')}
+            style={styles.loginLink}
           >
-            <Text style={styles.secondaryText}>
-              Already a member? <Text style={styles.signInLink}>Sign In</Text>
+            <Text style={styles.loginText}>
+              Already a member? <Text style={styles.loginBold}>Sign in</Text>
             </Text>
           </Pressable>
         </View>
@@ -124,142 +128,95 @@ export default function LandingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  bgCircle: {
-    position: 'absolute',
-    top: -width * 0.1,
-    right: -width * 0.1,
-    width: width * 0.8,
-    height: width * 0.8,
-    borderRadius: width * 0.4,
-    backgroundColor: '#DCFCE7',
-    opacity: 0.4,
-  },
-  bgCircleSecondary: {
-    position: 'absolute',
-    bottom: -width * 0.2,
-    left: -width * 0.2,
-    width: width * 0.6,
-    height: width * 0.6,
-    borderRadius: width * 0.3,
-    backgroundColor: '#E0F2FE', // Light blue tint for depth
-    opacity: 0.3,
+    backgroundColor: '#FFFFFF',
   },
   content: {
     flex: 1,
-    paddingHorizontal: 30,
+    paddingHorizontal: 24,
     justifyContent: 'space-between',
-    paddingVertical: 40,
+    paddingVertical: 50,
   },
   topSection: {
     alignItems: 'center',
-    marginTop: 40,
+    flex: 1,
+    justifyContent: 'center',
   },
-  iconOuterRing: {
-    padding: 12,
-    borderRadius: 38,
-    backgroundColor: '#F0FDF4',
-    borderWidth: 1,
-    borderColor: '#BBF7D0',
+  iconContainer: {
     marginBottom: 24,
   },
-  iconBox: {
-    width: 76,
-    height: 76,
-    borderRadius: 26,
-    backgroundColor: '#166534',
+  appName: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#10B981',
+    letterSpacing: 1.5,
+    marginBottom: 8,
+  },
+  headline: {
+    fontSize: 34,
+    fontWeight: '700',
+    textAlign: 'center',
+    color: '#1F2937',
+    lineHeight: 42,
+  },
+  subheadline: {
+    fontSize: 16.5,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 26,
+    marginTop: 20,
+    paddingHorizontal: 8,
+  },
+  featuresContainer: {
+    flexDirection: 'row',
     justifyContent: 'center',
+    gap: 28,
+    marginTop: 50,
+  },
+  feature: {
     alignItems: 'center',
-    elevation: 12,
-    shadowColor: '#166534',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
+    gap: 8,
   },
-  textContainer: {
-    alignItems: 'center',
+  featureText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
   },
-  brand: {
-    fontSize: 42,
-    fontWeight: '900',
-    color: '#064E3B',
-    letterSpacing: -1.5,
-  },
-  badge: {
-    backgroundColor: '#D1FAE5',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 100,
-    marginTop: 4,
-    marginBottom: 20,
-  },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '900',
-    color: '#065F46',
-    letterSpacing: 1.2,
-  },
-  tagline: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#1E293B',
-    textAlign: 'center',
-    lineHeight: 36,
-  },
-  highlightText: {
-    color: '#166534',
-  },
-  sub: {
-    fontSize: 16,
-    color: '#64748B',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginTop: 18,
-    paddingHorizontal: 15,
-  },
-  footer: {
+  bottomSection: {
     width: '100%',
   },
-  primaryBtn: {
-    flexDirection: 'row',
-    backgroundColor: '#166534',
-    borderRadius: 20,
-    paddingVertical: 14,
-    paddingLeft: 32,
-    paddingRight: 14,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-  },
-  primaryBtnText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  btnIconCircle: {
-    backgroundColor: '#fff',
-    width: 44,
-    height: 44,
+  ctaButton: {
+    backgroundColor: '#064E3B',
+    height: 64,
     borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
+    gap: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#064E3B',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+      },
+      android: { elevation: 8 },
+    }),
+  },
+  ctaText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  loginLink: {
+    marginTop: 24,
     alignItems: 'center',
   },
-  secondaryBtn: {
-    paddingVertical: 10,
-    alignItems: 'center',
+  loginText: {
+    fontSize: 16,
+    color: '#6B7280',
   },
-  secondaryText: {
-    fontSize: 15,
-    color: '#64748B',
-  },
-  signInLink: {
-    color: '#166534',
-    fontWeight: '800',
+  loginBold: {
+    color: '#10B981',
+    fontWeight: '600',
   },
 });

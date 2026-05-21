@@ -16,8 +16,8 @@ import {
   Paperclip, CheckSquare, Square, Stethoscope,
 } from 'lucide-react-native';
 
+//  const API_BASE_URL = 'http://172.20.10.2:8000/api';
  const API_BASE_URL = 'http://192.168.100.9:8000/api';
-// const API_BASE_URL = 'http://192.168.254.255:8000/api';
 interface Doctor {
   id: number;
   user?: { first_name: string; last_name: string };

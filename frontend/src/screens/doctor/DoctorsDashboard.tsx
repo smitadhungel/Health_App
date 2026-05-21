@@ -31,6 +31,7 @@ interface Appointment {
   status: string;
   status_display: string;
   reason: string;
+  patient: number;
 }
 
 interface Patient {
@@ -93,20 +94,29 @@ export default function DoctorDashboard() {
       const today = new Date().toISOString().split('T')[0];
 
       appointmentsArray.forEach((apt) => {
-        if (!patientMap.has(apt.patient_name)) {
+        if (!apt.patient_name) return;
+
+        marks[apt.appointment_date] = {
+          marked: true,
+          dotColor: apt.status === 'CANCELLED' ? '#ef4444' : '#16a34a',
+        };
+
+        // ✅ FIX: use most recent appointment date per patient
+        const existing = patientMap.get(apt.patient_name);
+        if (
+          !existing ||
+          new Date(apt.appointment_date) > new Date(existing.last_appointment)
+        ) {
           patientMap.set(apt.patient_name, {
             name: apt.patient_name,
             last_appointment: apt.appointment_date,
           });
         }
-        marks[apt.appointment_date] = {
-          marked: true,
-          dotColor: apt.status === 'CANCELLED' ? '#ef4444' : '#16a34a',
-        };
       });
 
+      // ✅ FIX: id = patient_name (used as navigation key)
       setPatients(
-        Array.from(patientMap.entries()).map(([id, val]) => ({ id, ...val }))
+        Array.from(patientMap.entries()).map(([name, val]) => ({ id: name, ...val }))
       );
       setMarkedDates(marks);
       setStats({
@@ -136,11 +146,9 @@ export default function DoctorDashboard() {
         setIsCheckingProfile(true);
         setLoading(true);
         try {
-          // Load user from AsyncStorage for header name
           const userStr = await AsyncStorage.getItem('user');
           if (userStr) setDoctor(JSON.parse(userStr));
 
-          // Check doctor profile — if 404 redirect to DoctorDetails
           try {
             await doctorsAPI.getMyProfile();
             console.log('Doctor profile found, loading dashboard...');
@@ -153,11 +161,9 @@ export default function DoctorDashboard() {
               navigation.replace('DoctorDetails');
               return;
             }
-            // Non-404 error (network issue etc.) — log and continue
             console.warn('Profile check non-404 error:', profileError?.message);
           }
 
-          // Profile exists → load dashboard data
           await fetchDashboardData();
         } catch (error) {
           console.error('Dashboard init error:', error);
@@ -346,8 +352,9 @@ export default function DoctorDashboard() {
               <TouchableOpacity
                 key={item.id}
                 style={styles.aptCard}
+                // ✅ FIX: pass patient_name instead of parseInt(name) which was NaN
                 onPress={() =>
-                  navigation.navigate('PatientDetails', { patientId: parseInt(item.id, 10) })
+                  navigation.navigate('PatientDetails', {patientName: item.id })
                 }
               >
                 <Icon name="person-circle" size={40} color="#cbd5e1" />

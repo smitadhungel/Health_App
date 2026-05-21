@@ -21,6 +21,7 @@ export type PatientStackParamList = {
   PlaceDetails: undefined;
   Prescriptions: undefined;
   PrescriptionDetail: { prescriptionId: number };
+  Chat:undefined;
 };
 
 export type DoctorStackParamList = {
@@ -29,7 +30,7 @@ export type DoctorStackParamList = {
   AppointmentDetails: { appointmentId: number };
   SetAvailability: undefined;
   AppointmentsCalendar: { date?: string };
-  PatientDetails: { patientId: number };
+  PatientDetails: { patientName: string };
   SharedDocuments: undefined;
   WritePrescription: {
     patientId: number;

@@ -1,18 +1,14 @@
-
 from pathlib import Path
 import os
+from dotenv import load_dotenv
 
+load_dotenv()
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-esg6xa3ivh#4u6hh^x3rlr!t4-*l)fiju(edkox&fqbc67jm&_'
-BAATO_API_KEY = 'bpk.r76TruuLdZ6qE8bFN98jLH71JSPgQ6XJpmdntS1-DSz6'
+SECRET_KEY = os.environ.get('SECRET_KEY')
+BAATO_API_KEY = os.environ.get('BAATO_API_KEY')
+HF_TOKEN = os.environ.get('HF_TOKEN')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -38,6 +34,7 @@ INSTALLED_APPS = [
     'documents',
     'corsheaders',
     'place',
+    'chat',
 ]
 
 MIDDLEWARE = [
@@ -54,7 +51,11 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'config.urls'
 
 CORS_ALLOW_ALL_ORIGINS = True
-ALLOWED_HOSTS = ['192.168.1.5', '127.0.0.1', '192.168.100.9','192.168.1.74','0.0.0.0','192.168.254.255']
+
+
+ALLOWED_HOSTS = ['192.168.1.5', '172.20.10.2', '192.168.100.9','192.168.100.32','0.0.0.0','192.168.31.140','192.168.1.93','172.20.10.2d','192.168.1.249']
+
+
 CORS_ALLOW_CREDENTIALS = True
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -85,6 +86,12 @@ DATABASES = {
     }
 }
 
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-snowflake",
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators

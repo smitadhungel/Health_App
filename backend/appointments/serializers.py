@@ -1,12 +1,9 @@
-# ============================================
-# appointments/serializers.py
-# ============================================
-
 from rest_framework import serializers
 from .models import Appointment, AppointmentHistory
 from doctor.models import DoctorProfile
 from datetime import datetime, date, time, timedelta
-
+from documents.models import MedicalDocument 
+from .models import Appointment, AppointmentHistory
 
 class AppointmentCreateSerializer(serializers.ModelSerializer):
     document_ids = serializers.ListField(
@@ -37,7 +34,7 @@ class AppointmentCreateSerializer(serializers.ModelSerializer):
                 )
 
             # Create the link
-            AppointmentDocument.objects.create(
+            Appointment.objects.create(
                 appointment=appointment,
                 document=document,
                 expires_at=appointment.date + timedelta(days=1)  # example: expire 1 day after appointment
@@ -254,11 +251,13 @@ class AppointmentListSerializer(serializers.ModelSerializer):
     )
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     is_upcoming = serializers.BooleanField(read_only=True)
+    patient_email = serializers.EmailField(source='patient.email', read_only=True)      
+    patient_phone = serializers.CharField(source='patient.phone_number', read_only=True)
     
     class Meta:
         model = Appointment
         fields = [
-            'id', 'patient_name', 'doctor_name', 'doctor_specialization',
+            'id', 'patient_name', 'doctor_name', 'doctor_specialization','patient_email', 'patient_phone',
             'appointment_date', 'appointment_time', 'duration_minutes',
             'status', 'status_display', 'is_upcoming', 'reason'
         ]

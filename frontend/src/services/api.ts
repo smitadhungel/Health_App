@@ -1,4 +1,3 @@
-// services/api.ts - UPDATED WITH CORRECT TYPES
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -15,8 +14,8 @@ import {
 
 
 // const BASE_URL = 'http://192.168.254.255:8000/api';
-   const BASE_URL = 'http://192.168.100.9:8000/api';
-  // const BASE_URL = 'http://192.168.10.175:8000/api';
+    const BASE_URL = 'http://192.168.100.9:8000/api';
+  //  const BASE_URL = 'http://192.168.1.249:8000/api';
   // const BASE_URL = 'http://192.168.1.74:8000/api';
 
 const api: AxiosInstance = axios.create({
@@ -28,7 +27,7 @@ const api: AxiosInstance = axios.create({
 });
 
 
-// REQUEST INTERCEPTOR (Add JWT Token)
+
 
 
 api.interceptors.request.use(
@@ -43,31 +42,6 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// api.interceptors.response.use(
-//   (response) => response,
-//   async (error) => {
-//     const originalRequest = error.config;
-//     if (error.response?.status === 401 && !originalRequest._retry) {
-//       originalRequest._retry = true;
-//       try {
-//         const refreshToken = await AsyncStorage.getItem('refresh_token');
-//         const response = await axios.post('/api/users/token/refresh/', { refresh: refreshToken });
-//         await AsyncStorage.setItem('access_token', response.data.access);
-//         originalRequest.headers.Authorization = `Bearer ${response.data.access}`;
-//         return api(originalRequest);
-//       } catch (refreshError) {
-//         // Refresh failed – logout
-//         await AsyncStorage.multiRemove(['access_token', 'refresh_token', 'user', 'user_role']);
-//         // Optionally navigate to login
-//         return Promise.reject(refreshError);
-//       }
-//     }
-//     return Promise.reject(error);
-//   }
-// );
-
-
-// RESPONSE INTERCEPTOR (Handle Errors)
 
 api.interceptors.response.use(
   (response) => response,
@@ -94,10 +68,10 @@ api.interceptors.response.use(
   }
 );
 
-// AUTH API
+
 
 export const authAPI = {
-  // Register new user (returns RegistrationResponse)
+
   register: async (userData: {
     email: string;
     username: string;
@@ -111,7 +85,6 @@ export const authAPI = {
     return response.data;
   },
 
-  // Login (returns LoginResponse)
   login: async (email: string, password: string): Promise<LoginResponse> => {
   const response = await api.post('/users/login/', { email, password });
   
@@ -124,7 +97,6 @@ export const authAPI = {
   return response.data;
 },
 
-  // Logout
   logout: async (refreshToken: string): Promise<{message: string}> => {
     const response = await api.post('/users/logout/', { refresh: refreshToken });
     
@@ -297,7 +269,7 @@ export const appointmentsAPI = {
     return response.data;
   },
 
-  // Cancel appointment
+
   cancel: async (appointmentId: number): Promise<{message: string}> => {
     const response = await api.post(`/appointments/${appointmentId}/cancel/`);
     return response.data;
@@ -316,26 +288,25 @@ export const appointmentsAPI = {
   getDoctorAppointments: async (params?: {
   status?: string;
   date?: string;
+  patient?: number; 
 }): Promise<Appointment[]> => {
   const response = await api.get('/appointments/doctor/appointments/', { params });
   const data = response.data;
-  // ✅ Same backend pattern
+
   return Array.isArray(data) ? data : data.appointments ?? [];
 },
-  // Update appointment status (doctor)
+ 
   updateDoctorAppointment: async (appointmentId: number, updateData: Partial<Appointment>): Promise<Appointment> => {
     const response = await api.put(`/appointments/doctor/${appointmentId}/update/`, updateData);
     return response.data;
   },
 
-  // Mark appointment as completed
+
   completeAppointment: async (appointmentId: number): Promise<Appointment> => {
     const response = await api.post(`/appointments/doctor/${appointmentId}/complete/`);
     return response.data;
   },
 
-  // Get available slots
-  // In appointmentsAPI (api.ts)
 getAvailableSlots: async (doctorId: number, date: string): Promise<string[]> => {
   const response = await api.get(
     `/appointments/available-slots/${doctorId}/`,
@@ -449,9 +420,7 @@ getSharedWithDoctor: async (): Promise<any> => {
   },
 };
 
-// ============================================
-// MEDICATIONS API
-// ============================================
+
 
 export const medicationsAPI = {
   // Create medication
@@ -470,8 +439,7 @@ export const medicationsAPI = {
     return response.data;
   },
 
-  // Get my medications
- // Replace your existing getMyMedications in api.ts with this:
+  
 
 getMyMedications: async (params?: {
   active?: boolean;
@@ -589,28 +557,52 @@ getMyMedications: async (params?: {
     const response = await api.get('/medications/stats/');
     return response.data;
   },
-};
 
-// ============================================
-// PATIENTS API (for doctors)
-// ============================================
-
-export const patientsAPI = {
-  // Get list of patients this doctor has consulted
-  getMyPatients: async (): Promise<User[]> => {
-    const response = await api.get('/patients/my-patients/');
+ updateLog: async (
+    logId: number,
+    updateData: {
+      status: 'TAKEN' | 'MISSED' | 'SKIPPED' | 'DELAYED';
+      notes?: string;
+    }
+  ): Promise<any> => {
+    const response = await api.patch(`/medications/logs/${logId}/update/`, updateData);
     return response.data;
   },
 };
 
-// ============================================
-// EXPORT
-// ============================================
 
 
-// ============================================
-// PRESCRIPTIONS API
-// ============================================
+export const patientsAPI = {
+  // Derives unique patients from doctor's appointments
+  getMyPatients: async (): Promise<User[]> => {
+    const response = await api.get('/appointments/doctor/appointments/');
+    const data = response.data;
+    const appointments: Appointment[] = Array.isArray(data) ? data : data.appointments ?? [];
+
+    // Build unique patient list from appointments
+    const seen = new Map<number, User>();
+    appointments.forEach((apt) => {
+      const patientId = typeof apt.patient === 'object'
+        ? (apt.patient as any)?.id
+        : apt.patient;
+
+      if (patientId && !seen.has(patientId)) {
+        seen.set(patientId, {
+          id: patientId,
+          first_name: apt.patient_name?.split(' ')[0] ?? '',
+          last_name:  apt.patient_name?.split(' ').slice(1).join(' ') ?? '',
+          email: (apt as any).patient_email ?? '',
+          phone_number: (apt as any).patient_phone ?? '',
+          last_appointment: apt.appointment_date,
+        } as any);
+      }
+    });
+
+    return Array.from(seen.values());
+  },
+};
+
+
 
 export const prescriptionsAPI = {
   // Doctor creates prescription
@@ -677,6 +669,19 @@ export const adminAPI = {
       reason
     });
     return response.data;
+  },
+};
+
+
+export const chatAPI = {
+  sendMessage: async (
+    message: string,
+    history: { role: 'user' | 'assistant'; text: string }[]
+  ): Promise<string> => {
+    const response = await api.post('/chat/message/', { message, history });
+    const reply = response.data?.reply;
+    if (!reply) throw new Error('Empty response from server');
+    return reply;
   },
 };
 export default api;

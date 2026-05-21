@@ -129,7 +129,7 @@ class DoctorAvailability(models.Model):
         constraints = [
             # Ensure end_time > start_time
             models.CheckConstraint(
-                check=models.Q(end_time__gt=models.F('start_time')),
+                condition=models.Q(end_time__gt=models.F('start_time')),
                 name='end_time_after_start'
             ),
             # Unique per doctor, day, start_time (prevents duplicate start times)

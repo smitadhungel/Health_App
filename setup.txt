@@ -1,6 +1,7 @@
-first thing is to get the setup for the Backend 
+lefirst thing is to get the setup for the Backend 
 
 creating the virtual enviroment in terminal 
+
 python -m venv .venv
  
  to activate the virtual enviroment
@@ -26,6 +27,8 @@ if we are testing the app in real mbl then we have to make sure the following th
 1. First of all both the laptop and mobile should be connected to the same wifi
 2. get the ip address of the netwrok for that run this cmd 
     Get-NetIPAddress
+
+
     the ip address will be of this type 192.168.1.5
     after this open the backend -> config ->settings.py 
     open that and in that file u will find this line
@@ -33,7 +36,7 @@ if we are testing the app in real mbl then we have to make sure the following th
     ALLOWED_HOSTS = ['192.168.1.5', '127.0.0.1', '192.168.100.9','192.168.1.74']
     add the ur new ip address in that line 
 
-    after this we have to change the basurl of the frontend for that open 
+    after this we have to change the base url of the frontend for that open 
     frontend -> src ->screens->servies->api.ts 
      then there is this line 
      const BASE_URL = 'http://192.168.100.9:8000/api';
@@ -44,7 +47,8 @@ now here we will learn to  run the app
 
 backend 
 .venv\Scripts\activate
-python manage.py runserver 0.0.0.0:8000
+
+
 
 
 forntend 
@@ -64,9 +68,22 @@ follow the cmd and then after that use these cmd in the terminals
 
  python manage.py shel 
  from users.models import User
- user = User.objects.get(email='your_superuser_email@example.com')
+ user = User.objects.get(email='admin2hospital.com')
  user.role = 'ADMIN'
  user.save()
  print(user.role)
 
- 
+ admin@hospital.com
+ admin123 / admin12
+
+
+ for the admin 
+ cd medicare-admin
+ npm install
+ npm run dev 
+
+ just copy the base url form frontend api.ts and last endpoint api should be removed an it will work smoothly 
+
+ medicare-admin->src->services->api.js
+
+    const BASE_URL = 'http://192.168.100.9:8000/';

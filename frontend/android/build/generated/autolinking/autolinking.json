@@ -1,26 +1,26 @@
 {
-  "root": "/Users/roshan/Desktop/Health/frontend",
-  "reactNativePath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native",
+  "root": "/Users/roshan/Desktop/medicare/frontend",
+  "reactNativePath": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native",
   "reactNativeVersion": "0.83",
   "dependencies": {
     "@react-native-async-storage/async-storage": {
-      "root": "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-async-storage/async-storage",
+      "root": "/Users/roshan/Desktop/medicare/frontend/node_modules/@react-native-async-storage/async-storage",
       "name": "@react-native-async-storage/async-storage",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-async-storage/async-storage/RNCAsyncStorage.podspec",
+          "podspecPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/@react-native-async-storage/async-storage/RNCAsyncStorage.podspec",
           "version": "2.2.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-async-storage/async-storage/android",
+          "sourceDir": "/Users/roshan/Desktop/medicare/frontend/node_modules/@react-native-async-storage/async-storage/android",
           "packageImportPath": "import com.reactnativecommunity.asyncstorage.AsyncStoragePackage;",
           "packageInstance": "new AsyncStoragePackage()",
           "buildTypes": [],
           "libraryName": "rnasyncstorage",
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-async-storage/async-storage/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/@react-native-async-storage/async-storage/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -29,23 +29,23 @@
       }
     },
     "@react-native-community/datetimepicker": {
-      "root": "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-community/datetimepicker",
+      "root": "/Users/roshan/Desktop/medicare/frontend/node_modules/@react-native-community/datetimepicker",
       "name": "@react-native-community/datetimepicker",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-community/datetimepicker/RNDateTimePicker.podspec",
+          "podspecPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/@react-native-community/datetimepicker/RNDateTimePicker.podspec",
           "version": "8.6.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-community/datetimepicker/android",
+          "sourceDir": "/Users/roshan/Desktop/medicare/frontend/node_modules/@react-native-community/datetimepicker/android",
           "packageImportPath": "import com.reactcommunity.rndatetimepicker.RNDateTimePickerPackage;",
           "packageInstance": "new RNDateTimePickerPackage()",
           "buildTypes": [],
           "libraryName": "RNDateTimePickerCGen",
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-community/datetimepicker/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/@react-native-community/datetimepicker/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -54,23 +54,23 @@
       }
     },
     "@react-native-community/geolocation": {
-      "root": "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-community/geolocation",
+      "root": "/Users/roshan/Desktop/medicare/frontend/node_modules/@react-native-community/geolocation",
       "name": "@react-native-community/geolocation",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-community/geolocation/react-native-geolocation.podspec",
+          "podspecPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/@react-native-community/geolocation/react-native-geolocation.podspec",
           "version": "3.4.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-community/geolocation/android",
+          "sourceDir": "/Users/roshan/Desktop/medicare/frontend/node_modules/@react-native-community/geolocation/android",
           "packageImportPath": "import com.reactnativecommunity.geolocation.GeolocationPackage;",
           "packageInstance": "new GeolocationPackage()",
           "buildTypes": [],
           "libraryName": "RNCGeolocationSpec",
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-community/geolocation/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/@react-native-community/geolocation/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -79,17 +79,17 @@
       }
     },
     "@react-native-picker/picker": {
-      "root": "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-picker/picker",
+      "root": "/Users/roshan/Desktop/medicare/frontend/node_modules/@react-native-picker/picker",
       "name": "@react-native-picker/picker",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-picker/picker/RNCPicker.podspec",
+          "podspecPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/@react-native-picker/picker/RNCPicker.podspec",
           "version": "2.11.4",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-picker/picker/android",
+          "sourceDir": "/Users/roshan/Desktop/medicare/frontend/node_modules/@react-native-picker/picker/android",
           "packageImportPath": "import com.reactnativecommunity.picker.RNCPickerPackage;",
           "packageInstance": "new RNCPickerPackage()",
           "buildTypes": [],
@@ -98,7 +98,7 @@
             "RNCAndroidDialogPickerComponentDescriptor",
             "RNCAndroidDropdownPickerComponentDescriptor"
           ],
-          "cmakeListsPath": "/Users/roshan/Desktop/Health/frontend/node_modules/@react-native-picker/picker/android/src/main/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/@react-native-picker/picker/android/src/main/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -107,17 +107,17 @@
       }
     },
     "react-native-gesture-handler": {
-      "root": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-gesture-handler",
+      "root": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-gesture-handler",
       "name": "react-native-gesture-handler",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-gesture-handler/RNGestureHandler.podspec",
-          "version": "2.30.0",
+          "podspecPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-gesture-handler/RNGestureHandler.podspec",
+          "version": "2.31.1",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-gesture-handler/android",
+          "sourceDir": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-gesture-handler/android",
           "packageImportPath": "import com.swmansion.gesturehandler.RNGestureHandlerPackage;",
           "packageInstance": "new RNGestureHandlerPackage()",
           "buildTypes": [],
@@ -126,7 +126,7 @@
             "RNGestureHandlerButtonComponentDescriptor",
             "RNGestureHandlerRootViewComponentDescriptor"
           ],
-          "cmakeListsPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -135,23 +135,23 @@
       }
     },
     "react-native-image-crop-picker": {
-      "root": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-image-crop-picker",
+      "root": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-image-crop-picker",
       "name": "react-native-image-crop-picker",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-image-crop-picker/RNImageCropPicker.podspec",
+          "podspecPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-image-crop-picker/RNImageCropPicker.podspec",
           "version": "0.51.1",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-image-crop-picker/android",
+          "sourceDir": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-image-crop-picker/android",
           "packageImportPath": "import com.reactnative.ivpusic.imagepicker.PickerPackage;",
           "packageInstance": "new PickerPackage()",
           "buildTypes": [],
           "libraryName": "RNCImageCropPickerSpec",
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-image-crop-picker/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-image-crop-picker/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -160,23 +160,23 @@
       }
     },
     "react-native-image-picker": {
-      "root": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-image-picker",
+      "root": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-image-picker",
       "name": "react-native-image-picker",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-image-picker/react-native-image-picker.podspec",
+          "podspecPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-image-picker/react-native-image-picker.podspec",
           "version": "8.2.1",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-image-picker/android",
+          "sourceDir": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-image-picker/android",
           "packageImportPath": "import com.imagepicker.ImagePickerPackage;",
           "packageInstance": "new ImagePickerPackage()",
           "buildTypes": [],
           "libraryName": "RNImagePickerSpec",
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-image-picker/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-image-picker/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -185,23 +185,23 @@
       }
     },
     "react-native-permissions": {
-      "root": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-permissions",
+      "root": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-permissions",
       "name": "react-native-permissions",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-permissions/RNPermissions.podspec",
+          "podspecPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-permissions/RNPermissions.podspec",
           "version": "5.5.1",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-permissions/android",
+          "sourceDir": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-permissions/android",
           "packageImportPath": "import com.zoontek.rnpermissions.RNPermissionsPackage;",
           "packageInstance": "new RNPermissionsPackage()",
           "buildTypes": [],
           "libraryName": "RNPermissionsSpec",
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -210,17 +210,17 @@
       }
     },
     "react-native-push-notification": {
-      "root": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-push-notification",
+      "root": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-push-notification",
       "name": "react-native-push-notification",
       "platforms": {
         "ios": null,
         "android": {
-          "sourceDir": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-push-notification/android",
+          "sourceDir": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-push-notification/android",
           "packageImportPath": "import com.dieam.reactnativepushnotification.ReactNativePushNotificationPackage;",
           "packageInstance": "new ReactNativePushNotificationPackage()",
           "buildTypes": [],
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-push-notification/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-push-notification/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -229,23 +229,23 @@
       }
     },
     "react-native-reanimated": {
-      "root": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-reanimated",
+      "root": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-reanimated",
       "name": "react-native-reanimated",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-reanimated/RNReanimated.podspec",
-          "version": "4.2.1",
+          "podspecPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-reanimated/RNReanimated.podspec",
+          "version": "4.3.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-reanimated/android",
+          "sourceDir": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-reanimated/android",
           "packageImportPath": "import com.swmansion.reanimated.ReanimatedPackage;",
           "packageInstance": "new ReanimatedPackage()",
           "buildTypes": [],
           "libraryName": "rnreanimated",
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-reanimated/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-reanimated/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -254,17 +254,17 @@
       }
     },
     "react-native-safe-area-context": {
-      "root": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-safe-area-context",
+      "root": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-safe-area-context",
       "name": "react-native-safe-area-context",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-safe-area-context/react-native-safe-area-context.podspec",
-          "version": "5.6.2",
+          "podspecPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-safe-area-context/react-native-safe-area-context.podspec",
+          "version": "5.7.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-safe-area-context/android",
+          "sourceDir": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-safe-area-context/android",
           "packageImportPath": "import com.th3rdwave.safeareacontext.SafeAreaContextPackage;",
           "packageInstance": "new SafeAreaContextPackage()",
           "buildTypes": [],
@@ -273,7 +273,7 @@
             "RNCSafeAreaProviderComponentDescriptor",
             "RNCSafeAreaViewComponentDescriptor"
           ],
-          "cmakeListsPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-safe-area-context/android/src/main/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-safe-area-context/android/src/main/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -282,17 +282,17 @@
       }
     },
     "react-native-screens": {
-      "root": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-screens",
+      "root": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-screens",
       "name": "react-native-screens",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-screens/RNScreens.podspec",
-          "version": "4.20.0",
+          "podspecPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-screens/RNScreens.podspec",
+          "version": "4.24.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-screens/android",
+          "sourceDir": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-screens/android",
           "packageImportPath": "import com.swmansion.rnscreens.RNScreensPackage;",
           "packageInstance": "new RNScreensPackage()",
           "buildTypes": [],
@@ -309,10 +309,10 @@
             "RNSScreenFooterComponentDescriptor",
             "RNSScreenContentWrapperComponentDescriptor",
             "RNSModalScreenComponentDescriptor",
-            "RNSBottomTabsComponentDescriptor",
+            "RNSTabsHostComponentDescriptor",
             "RNSSafeAreaViewComponentDescriptor"
           ],
-          "cmakeListsPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-screens/android/src/main/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-screens/android/src/main/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -321,17 +321,17 @@
       }
     },
     "react-native-svg": {
-      "root": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-svg",
+      "root": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-svg",
       "name": "react-native-svg",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-svg/RNSVG.podspec",
-          "version": "15.15.3",
+          "podspecPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-svg/RNSVG.podspec",
+          "version": "15.15.4",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-svg/android",
+          "sourceDir": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-svg/android",
           "packageImportPath": "import com.horcrux.svg.SvgPackage;",
           "packageInstance": "new SvgPackage()",
           "buildTypes": [],
@@ -367,7 +367,7 @@
             "RNSVGTSpanComponentDescriptor",
             "RNSVGUseComponentDescriptor"
           ],
-          "cmakeListsPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-svg/android/src/main/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-svg/android/src/main/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -376,23 +376,23 @@
       }
     },
     "react-native-vector-icons": {
-      "root": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-vector-icons",
+      "root": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-vector-icons",
       "name": "react-native-vector-icons",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-vector-icons/RNVectorIcons.podspec",
+          "podspecPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-vector-icons/RNVectorIcons.podspec",
           "version": "10.3.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-vector-icons/android",
+          "sourceDir": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-vector-icons/android",
           "packageImportPath": "import com.oblador.vectoricons.VectorIconsPackage;",
           "packageInstance": "new VectorIconsPackage()",
           "buildTypes": [],
           "libraryName": "RNVectorIconsSpec",
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-vector-icons/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-vector-icons/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -401,23 +401,23 @@
       }
     },
     "react-native-worklets": {
-      "root": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-worklets",
+      "root": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-worklets",
       "name": "react-native-worklets",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-worklets/RNWorklets.podspec",
-          "version": "0.7.2",
+          "podspecPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-worklets/RNWorklets.podspec",
+          "version": "0.8.1",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-worklets/android",
+          "sourceDir": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-worklets/android",
           "packageImportPath": "import com.swmansion.worklets.WorkletsPackage;",
           "packageInstance": "new WorkletsPackage()",
           "buildTypes": [],
           "libraryName": "rnworklets",
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/roshan/Desktop/Health/frontend/node_modules/react-native-worklets/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/roshan/Desktop/medicare/frontend/node_modules/react-native-worklets/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -588,7 +588,7 @@
         {
           "name": "--path <path>",
           "description": "Path to the React Native project root.",
-          "default": "/Users/roshan/Desktop/Health/frontend"
+          "default": "/Users/roshan/Desktop/medicare/frontend"
         },
         {
           "name": "--platform <string>",
@@ -888,7 +888,7 @@
   "assets": [],
   "project": {
     "ios": {
-      "sourceDir": "/Users/roshan/Desktop/Health/frontend/ios",
+      "sourceDir": "/Users/roshan/Desktop/medicare/frontend/ios",
       "xcodeProject": {
         "name": "frontend.xcodeproj",
         "path": ".",
@@ -897,7 +897,7 @@
       "assets": []
     },
     "android": {
-      "sourceDir": "/Users/roshan/Desktop/Health/frontend/android",
+      "sourceDir": "/Users/roshan/Desktop/medicare/frontend/android",
       "appName": "app",
       "packageName": "com.frontend",
       "applicationId": "com.frontend",
